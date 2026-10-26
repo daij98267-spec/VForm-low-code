@@ -9,7 +9,7 @@
 </template>
 
 <script lang="ts" setup>
-    //label是展示的，value是存在formData里的值
+    //label是展示的，value是存在formData里的值6
     defineProps<{ widget: any, formData: any }>()//约定好需要的东西
 </script>
 
