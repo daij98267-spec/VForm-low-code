@@ -2,15 +2,22 @@
 <!--渲染器-->
 <!--整个表都是formData-->
 <div class="renderer" >
-<el-form ref="formRef" :label-width="formJson.formConfig.labelWidth" :model="formData">
+<el-form ref="formRef" :label-width="formJson.formConfig.labelWidth"
+                       :size="formJson.formConfig.size"
+                       :model="formData"
+                       :label-position="formJson.formConfig.labelPosition"
+                       >
     <!--画布只接收，不能往外拖，与组件库共用一个group-->
     <draggable v-model="widgetList" item-key="id" :group="{ name:'widgets', pull:false, put:true }">
         <template #item="{element:widget}">
-        <el-form-item :label="widget.options.label"  
+            <div>
+            <!--如果是容器组件-->
+        <ContainerWidget v-if="widget.formItemFlag === false" :widget="widget" :formData="formData" />
+        <el-form-item v-else :label="widget.options.label"  
                       :class="{'highlight':widget.id===props.selectedWidgetId&&!props.preview}"
                       :prop="widget.options.name"
                       :rules="getRules(widget)"
-                      @click="selectWidget(widget)"
+                      @click.stop="selectWidget(widget)"
                       >
                       <!--prop 是表单的属性，用于绑定表单数据的属性-->
             <component :is="basicFields[widget.type]"
@@ -29,6 +36,7 @@
             <el-button type="primary" size="small" v-if="!preview" @click="moveUp(widget)" :disabled="formJson.widgetList.indexOf(widget)===0">↑</el-button>
             <el-button type="primary" size="small" v-if="!preview" @click="moveDown(widget)" :disabled="formJson.widgetList.indexOf(widget)===formJson.widgetList.length-1">↓</el-button>
         </el-form-item>
+        </div>
         </template>
     </draggable>
 </el-form>
@@ -39,7 +47,8 @@
 import { basicFields } from '../widgets/registry'
 import { deepClone } from '../utils/util.ts'
 import draggable from 'vuedraggable'
-import { computed,ref } from 'vue'
+import { computed,ref,provide } from 'vue'
+import ContainerWidget from './ContainerWidget.vue'
 
 const emit = defineEmits(['select-widget','remove-widget','copy-widget','moveUp-widget','moveDown-widget','record-widgets'])
 const props = defineProps<{ formJson: any, formData: Record<string, any>,selectedWidgetId?:any,preview?:boolean }>()//约定好需要的东西
@@ -65,19 +74,23 @@ const moveUp=(widget:any)=>{
 const moveDown=(widget:any)=>{
     emit('moveDown-widget',widget)
 }
-
+//获取表单数据
 function getFormData(){
     return deepClone(props.formData)
+}
+//校验表单
+function validateForm(){
+    return formRef.value.validate()
 }
 //导出表单实例
 const formRef=ref<any>(null)
 function clearValidate(name:string){
     formRef.value.clearValidate(name)
 }
-
 defineExpose({
     getFormData,
-    clearValidate
+    clearValidate,
+    validateForm
 })
 const widgetList=computed({
     get:()=>props.formJson.widgetList,
@@ -85,6 +98,7 @@ const widgetList=computed({
         emit('record-widgets',val)
     }
 })
+//根据组件的属性，返回对应的校验规则
 const getRules=(widget:any)=>{
     if(widget.options.required){
         const trigger = ['input','textarea'].includes(widget.type) ? 'blur' : 'change'
@@ -94,6 +108,15 @@ const getRules=(widget:any)=>{
         return []
     }
 }
+provide('formCtx', {
+    selectWidget,
+    removeWidget,
+    copyWidget,
+    moveUp,
+    moveDown,
+    selectedWidgetId: computed(() => props.selectedWidgetId),
+    preview: computed(() => props.preview),
+  })
 </script>
 
 <style scoped>

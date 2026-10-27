@@ -33,7 +33,6 @@ interface FormConfig{
     labelWidth:number
     labelPosition:string
     size:string
-    labelAlign:string
     cssCode:string  
     customClass:any[]
     functions:string
@@ -51,7 +50,6 @@ export function getDefaultFormConfig():FormConfig{
         labelWidth:80,
         labelPosition:'left',
         size:'',
-        labelAlign:'label-left-align',
         cssCode:'',
         customClass:[],
         functions:'',

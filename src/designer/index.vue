@@ -30,19 +30,22 @@
           </div>
         </el-aside>
         <!--渲染器，渲染器给组件库落脚点-->
-        <el-main class="designer-canvas" @click.self="selectedEmpty">
+        <el-main class="designer-canvas">
           <div class="canvas-toolbar">
             <div class="toolbar-left">
               <el-button type="success" class="toolbar-btn" @click="getForm">提交</el-button>
               <el-button type="info" class="toolbar-btn" @click="previewForm">预览</el-button>
               <el-button type="danger" class="toolbar-btn" @click="resetForm">重置表单</el-button>
+              <!--撤销与重做-->
+              <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="undo">←</el-button>
+              <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="redo">→</el-button>
             </div>
             <div class="toolbar-right">
               <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="exportJson">导出Json</el-button>
               <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="importJson">导入Json</el-button>
             </div>
           </div>
-          <div class="renderer">
+          <div class="renderer" @click="selectedEmpty">
         <Renderer ref="rendererRef" :formJson="formJson" :formData="formData"
          @select-widget="selectedWidget"
          @remove-widget="removeWidget"
@@ -59,11 +62,18 @@
           <div class="widget-properties">
             <!--属性面板显示表单的配置-->
             <div v-if="!onselectedWidget" class="form-property-config">
-              <el-input v-model="formJson.formConfig.labelWidth" placeholder="请输入标签宽度"/>
-              <el-input v-model="formJson.formConfig.labelPosition" placeholder="请输入标签位置"/>
-              <el-input v-model="formJson.formConfig.labelAlign" placeholder="请输入标签对齐方式"/>
-              <el-input v-model="formJson.formConfig.labelCol" placeholder="请输入标签列数"/>
-              <el-input v-model="formJson.formConfig.inputCol" placeholder="请输入输入列数"/>
+              <el-input-number v-model="formJson.formConfig.labelWidth" placeholder="请输入标签宽度"></el-input-number>
+              <el-select v-model="formJson.formConfig.labelPosition" placeholder="请选择标签对齐方式">
+                <el-option label="左对齐" value="left" />
+                <el-option label="顶部" value="top" />
+                <el-option label="右对齐" value="right" />
+              </el-select>
+              <el-select v-model="formJson.formConfig.size" placeholder="请选择组件大小">
+                <el-option label="小" value="small" />
+                <el-option label="默认" value="" />
+                <el-option label="大" value="large" />
+              </el-select>
+              
             </div>
             <!--属性面板显示选中的组件-->
             <div v-if="onselectedWidget" class="widget-property-item">
@@ -75,6 +85,7 @@
                 <el-input v-model="onselectedWidget.options.label" placeholder="请输入组件名称"/>
                 <el-input v-model="onselectedWidget.options.placeholder" placeholder="请输入占位符"/>
                 <el-input v-model="onselectedWidget.options.name" placeholder="请输入组件字段名"/>
+                <!--<el-input v-model="onselectedWidget" placeholder="显示组件的父组件"></el-input>-->
                <!--下拉框选项--> 
                 <div v-if="onselectedWidget.type==='select'||onselectedWidget.type==='radio'||onselectedWidget.type==='checkbox'" class="widget-property-item">
                 <div v-for="(item,index) in onselectedWidget.options.optionItems" :key="index">
@@ -127,7 +138,7 @@ import {basicFieldsLabel } from '../widgets/registry.ts'
 import form1 from '../../examples/form1.ts'
 import { ref,reactive } from 'vue'
 import {generateId,deepClone} from '../utils/util.ts'
-import type { Widget ,FieldOption,SliderOption,SwitchOption,WidgetOptions} from '../utils/type.ts'
+import type { Widget ,FieldOption} from '../utils/type.ts'
 import { ElMessage } from 'element-plus'
 import { getDefaultFormConfig } from '../utils/util.ts'
 import draggable from 'vuedraggable'
@@ -151,17 +162,20 @@ const removeWidget=(widget:Widget|null)=>{
         onselectedWidget.value=null
         onselectedWidgetId.value=null
     }
+    saveHistory()
     formJson.widgetList=formJson.widgetList.filter(opt=>opt.id!==widget?.id)
 }
 //复制组件
 const copyWidget=(widget:Widget|null)=>{
   if(!widget){return}
+  saveHistory()
   //在这个组件的下面再复制一份组件
   let id=generateId()
   //不是追加到末尾，而是插入到当前组件的下面
   let copy=deepClone(widget)
   copy.id=id
-  copy.options.name=id
+  copy.options.name=getNextName(widget.type)
+  console.log(copy.options.name)
   formJson.widgetList.splice(formJson.widgetList.indexOf(widget)+1,0,copy)
 }
 //上移组件
@@ -171,6 +185,7 @@ const moveUp=(widget:Widget|null)=>{
   if(formJson.widgetList.indexOf(widget)===0){return}
   //如果不是第一个组件，那么就上移
   else{
+    saveHistory()
     const i = formJson.widgetList.indexOf(widget)
   // 上移：交换 i 和 i-1
   const tmp = formJson.widgetList[i]
@@ -185,6 +200,7 @@ const moveDown=(widget:Widget|null)=>{
   if(formJson.widgetList.indexOf(widget)===formJson.widgetList.length-1){return}
   //如果不是最后一个组件，那么就下移
   else{
+    saveHistory()
     const i = formJson.widgetList.indexOf(widget)
   // 下移：交换 i 和 i+1
   const tmp = formJson.widgetList[i]
@@ -198,8 +214,7 @@ const selectedEmpty=()=>{
   onselectedWidget.value=null
   onselectedWidgetId.value=null
   //在属性面板显示formConfig的配置
-  console.log(1111)
-
+  console.log(111)
 }
 //选中组件
 const selectedWidget=(widget:Widget|null)=>{
@@ -211,6 +226,7 @@ const removeOption=(item:FieldOption|null)=>{
   if(!onselectedWidget.value?.options.optionItems){
     return
   }
+  saveHistory()
   onselectedWidget.value.options.optionItems=onselectedWidget.value.options.optionItems.filter(opt=>opt!==item)||[]
 }
 //新增选项
@@ -218,20 +234,36 @@ const addOption=()=>{
   if(!onselectedWidget.value?.options.optionItems){
     return
   }
+  saveHistory()
   onselectedWidget.value.options.optionItems.push({label:'',value:''})
 }
-const getForm=()=>{
-    const getData=rendererRef.value.getFormData()
+const getForm=async()=>{
+  //校验表单
+  try{
+    await rendererRef.value.validateForm()
+    const getData=await rendererRef.value.getFormData()
     console.log(getData)
     console.log(formData)
-}
+    console.log(getData)
+    console.log(formData)
+  }catch(error){
+    //加弹窗提示
+    ElMessage.error({
+      message: '请输入必填字段',
+      type: 'error'
+    })
+    return
+  }
+  }
 //点击组件库，把组件库中的组件追加到formJson里
 const addWidget=(type:string)=>{
+  saveHistory()
   const widget=basicFieldsLabel.find(widget=>widget.type===type)
   let id=generateId()
-  let name=id
+  let name=getNextName(type)
   if(!widget){return}
-  formJson.widgetList.push({id,type,options:{...deepClone(widget.options),name}})
+  formJson.widgetList.push({formItemFlag:widget.formItemFlag,category:widget.category,
+    children:deepClone(widget.children),type:widget.type,id,options:{...deepClone(widget.options),name}})
 }
 //预览表单
 const previewForm=()=>{
@@ -257,6 +289,7 @@ const importJsonSubmit=()=>{
     const json = JSON.parse(formJsonStr2.value)
     //判断是否是Json字符串，是否有widgetList和formConfig，widgetList是否是数组，formConfig是否是对象
     if (json.widgetList && json.formConfig && Array.isArray(json.widgetList) && typeof json.formConfig === 'object') {
+      saveHistory()
       formJson.widgetList = json.widgetList
       formJson.formConfig = json.formConfig
       //导入新Json后，属性面板指向的当前组件要清空为null
@@ -264,13 +297,13 @@ const importJsonSubmit=()=>{
       onselectedWidgetId.value=null
     }
   } catch (error) {
-    //加弹窗提示
+    //加弹窗提示，表单不关
     ElMessage.error({
       message: '导入Json失败',
       type: 'error'
     })
     }
-  importJsonVisible.value=false
+  importJsonVisible.value=true
 }
 //重置表单
 const resetForm =()=>{
@@ -288,21 +321,57 @@ const resetForm =()=>{
 }
 //记录组件位置
 const recordWidgets=(val:Widget[])=>{
+  saveHistory()
   formJson.widgetList=val
 }
 //拖入定位
 const cloneWidget=(widget:Widget)=>{
   console.log(widget)
   let id=generateId()
-  let name=id
-  return {type:widget.type,id,options:{...deepClone(widget.options),name}}
+  let name=getNextName(widget.type)
+  saveHistory()
+  return {formItemFlag:widget.formItemFlag,category:widget.category,
+    children:deepClone(widget.children),type:widget.type,id,options:{...deepClone(widget.options),name}}
 }
 
 //清空表单验证
 const clearValidate=()=>{
   rendererRef.value.clearValidate(onselectedWidget.value?.options.name)
 }
-
+//给formData中的每一个name一个唯一、稳定、有意义的值
+const getNextName=(type:string)=>{
+  let i=1
+  while(formJson.widgetList.some(widget=>widget.type===type&&widget.options.name===type+i)){
+    i++
+  }
+  return type+i
+}
+const undoStack=ref<any[]>([])//里面存的是撤销栈
+//撤销与重做
+const undo=()=>{
+  if(undoStack.value.length===0){
+    return
+  }
+  redoStack.value.push(deepClone(formJson))
+  console.log(undoStack.value)
+  Object.assign(formJson,undoStack.value.pop()||{})
+}
+//存档
+const saveHistory=()=>{
+  //把当前的状态压入撤销栈
+  //每次操作前存档
+  undoStack.value.push(deepClone(formJson))
+  redoStack.value=[]
+}
+//重做，重做本身也要存档放到栈里面
+const redoStack=ref<any[]>([])//里面存的是重做栈
+const redo=()=>{
+  if(redoStack.value.length===0){
+    return
+  }
+  undoStack.value.push(deepClone(formJson))
+  Object.assign(formJson,redoStack.value.pop()||{})
+}
 
 
 </script>

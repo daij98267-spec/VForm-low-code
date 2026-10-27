@@ -1,4 +1,5 @@
 //手写一份完整的表单，包含input、textarea、select用于测试啥的
+//加上容器嵌套
 import {getDefaultFormConfig} from '../src/utils/util'
 
 const widgetList=[]
@@ -42,7 +43,28 @@ widgetList.push({
       ],
       required:true
     }
-})
+},
+{
+    id:'container_1',
+    type:'grid',
+    options:{
+        label:'容器',
+        name:'container',
+        cols:2
+    },
+    category:'container',
+    formItemFlag:false,
+    icon:'grid',
+    children: [
+    { id:'g_input', type:'input', category:'field', formItemFlag:true,
+      options:{ label:'姓名', name:'g_name', required:true } },
+    { id:'g_textarea', type:'textarea', category:'field', formItemFlag:true,
+      options:{ label:'备注', name:'g_note', required:true } },
+    { id:'g_select', type:'select', category:'field', formItemFlag:true,
+      options:{ label:'性别', name:'g_gender', optionItems:[{label:'男',value:'男'},{label:'女',value:'女'}], required:true } }
+  ]
+},
+)
 //formData是表单数据模型
 //导出Json格式
 const formJson={
