@@ -12,7 +12,6 @@
     optionItems?: FieldOption[]   // 只有 selecth和Radio,checkbox类才有
     sliderItems?:SliderOption//滑块的选项
     switchItems?:SwitchOption//开关的选项
-    cols?:number//容器的列数
   }
 
   // 一个完整控件
@@ -23,7 +22,7 @@
     category?: string
     formItemFlag?: boolean
     icon?: string
-    children?: Widget[]
+    children?: Widget[][]
   }
   // 单选框的选项
   export type RadioOption = {

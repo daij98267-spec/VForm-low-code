@@ -22,7 +22,7 @@ import type { WidgetOptions, Widget } from '../utils/type.ts'
 //导出一张label、type的映射表
 //这个负责点击组件的时候，根据type，弄成一个对象，放到formJson.widgetList里
 //加入显式必填选项
-export const basicFieldsLabel:  {formItemFlag: boolean;category?: string;children?:Widget[]; type: string; options: Omit<WidgetOptions, 'name'> }[]= [
+export const basicFieldsLabel:  {formItemFlag: boolean;category?: string;children?:Widget[][]; type: string; options: Omit<WidgetOptions, 'name'> }[]= [
     {formItemFlag:true,type:'select',options:{placeholder:'请选择性别',
         optionItems: [{ label: '男', value: '男' }, { label: '女', value: '女' }],
         label:'下拉选择',required:true}},    
@@ -44,6 +44,6 @@ export const basicFieldsLabel:  {formItemFlag: boolean;category?: string;childre
         activeValue:true,
         inactiveValue:false
     },required:true}},
-    { type: 'grid', options: { label: '栅格容器', cols: 2 }, formItemFlag: false, category: 'container', children: [] }
+    { type: 'grid', options: { label: '栅格容器' }, formItemFlag: false, category: 'container', children: [[],[]] }
 ]
 

@@ -50,20 +50,70 @@ widgetList.push({
     options:{
         label:'容器',
         name:'container',
-        cols:2
     },
     category:'container',
     formItemFlag:false,
     icon:'grid',
-    children: [
-    { id:'g_input', type:'input', category:'field', formItemFlag:true,
-      options:{ label:'姓名', name:'g_name', required:true } },
-    { id:'g_textarea', type:'textarea', category:'field', formItemFlag:true,
-      options:{ label:'备注', name:'g_note', required:true } },
-    { id:'g_select', type:'select', category:'field', formItemFlag:true,
-      options:{ label:'性别', name:'g_gender', optionItems:[{label:'男',value:'男'},{label:'女',value:'女'}], required:true } }
-  ]
-},
+    children: [[
+       {
+        id:'g_input',
+        type:'input',
+        options:{
+        label:'姓名',
+        name:'name_1',
+        placeholder:'请输入姓名',
+        required:true
+        },
+        category:'field',
+        formItemFlag:true,
+        icon:'input'
+       },{
+        id:'g_textarea',
+        type:'textarea',
+        options:{
+        label:'描述',//给人看
+        name:'description_1',//给机器看
+        placeholder:'请输入描述',
+        required:true
+        },
+        category:'field',
+        formItemFlag:true,
+        icon:'textarea'
+       }
+      ],
+      [
+       {
+        id:'g_select',
+        type:'select',
+        options:{
+        name:'gender_1',
+        label: '性别',
+        placeholder: '请选择性别',
+        optionItems: [
+          { label: '男', value: '男' },
+          { label: '女', value: '女' }
+        ],
+        required:true
+        },
+        category:'field',
+        formItemFlag:true,
+        icon:'select'
+       },{
+        id:'g_input1',
+        type:'input',
+        options:{
+        label:'手机号',
+        name:'phone_1',
+        placeholder:'请输入手机号',
+        required:true
+        },
+        category:'field',
+        formItemFlag:true,
+        icon:'input'
+       }
+      ]
+    ]
+}
 )
 //formData是表单数据模型
 //导出Json格式

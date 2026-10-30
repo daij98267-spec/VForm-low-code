@@ -53,6 +53,7 @@
          @moveUp-widget="moveUp"
          @moveDown-widget="moveDown"
          @record-widgets="recordWidgets"
+         @select-parent-widget="selectParentWidget"
          :selectedWidgetId="onselectedWidgetId"
          />
         </div>
@@ -60,6 +61,10 @@
         <el-aside width="300px" class="designer-aside">
           <!--属性面板-->
           <div class="widget-properties">
+            <!--选中父组件，显示父组件的属性-->
+            <div v-if="onselectedParentWidgetId">
+              <el-input v-model="onselectedParentWidgetId" placeholder="请输入父组件id"></el-input>
+            </div>
             <!--属性面板显示表单的配置-->
             <div v-if="!onselectedWidget" class="form-property-config">
               <el-input-number v-model="formJson.formConfig.labelWidth" placeholder="请输入标签宽度"></el-input-number>
@@ -144,6 +149,7 @@ import { getDefaultFormConfig } from '../utils/util.ts'
 import draggable from 'vuedraggable'
 
 const onselectedWidgetId=ref<string|null>(null)//被选中组件的id
+const onselectedParentWidgetId=ref<string|null>(null)//被选中的父组件的id
 const onselectedWidget=ref<Widget|null>(null)//被选中的组件
 const previewVisible=ref<boolean>(false)//预览表窗是否可见
 const exportJsonVisible=ref<boolean>(false)//导出Json弹窗是否可见
@@ -155,7 +161,22 @@ const formJson = reactive<{ widgetList: Widget[]; formConfig: any }>(form1)
 const formData=reactive<Record<string, any>>({})
 const rendererRef=ref()//渲染器的引用
 
-
+const findParentArray = (list: Widget[], widget: Widget | null): Widget[] | null => {
+    for (const item of list) {
+      // 命中：widget 直接在这个 list 里，返回这个 list（就是它「所属的那一列」）
+      if (item.id === widget?.id) {
+        return list
+      }
+      // 没命中但有孩子（children 是二维，每一列是一个 Widget[]），逐列递归
+      if (item.children) {
+        for (const column of item.children) {
+          const found = findParentArray(column, widget)
+          if (found) return found
+        }
+      }
+    }
+    return null
+  }
 //删除组件
 const removeWidget=(widget:Widget|null)=>{
     if(onselectedWidget.value?.id===widget?.id){//如果选中的组件是删除的组件，那么选中的组件就为空
@@ -163,8 +184,12 @@ const removeWidget=(widget:Widget|null)=>{
         onselectedWidgetId.value=null
     }
     saveHistory()
-    formJson.widgetList=formJson.widgetList.filter(opt=>opt.id!==widget?.id)
-}
+    //删除组件
+    if(!widget){return}
+    const parentArr = findParentArray(formJson.widgetList, widget)
+    if(!parentArr){return}
+    parentArr.splice(parentArr.indexOf(widget),1)
+  }
 //复制组件
 const copyWidget=(widget:Widget|null)=>{
   if(!widget){return}
@@ -176,39 +201,71 @@ const copyWidget=(widget:Widget|null)=>{
   copy.id=id
   copy.options.name=getNextName(widget.type)
   console.log(copy.options.name)
-  formJson.widgetList.splice(formJson.widgetList.indexOf(widget)+1,0,copy)
+  const parentArr=findParentArray(formJson.widgetList, widget)
+  if(!parentArr){return}
+  parentArr.splice(parentArr.indexOf(widget)+1,0,copy)
 }
 //上移组件
 const moveUp=(widget:Widget|null)=>{
   if(!widget){return}
+  const parentArr=findParentArray(formJson.widgetList, widget)
+  if(!parentArr){return}
   //如果是第一个组件，那么就不上移
-  if(formJson.widgetList.indexOf(widget)===0){return}
+  if(parentArr.indexOf(widget)===0){return}
   //如果不是第一个组件，那么就上移
   else{
     saveHistory()
-    const i = formJson.widgetList.indexOf(widget)
+    const i = parentArr.indexOf(widget)
   // 上移：交换 i 和 i-1
-  const tmp = formJson.widgetList[i]
-  formJson.widgetList[i] = formJson.widgetList[i-1]
-  formJson.widgetList[i-1] = tmp  
+  const tmp = parentArr[i]
+  parentArr[i] = parentArr[i-1]
+  parentArr[i-1] = tmp  
   }
 }
 //下移组件
 const moveDown=(widget:Widget|null)=>{
   if(!widget){return}
+  const parentArr=findParentArray(formJson.widgetList, widget)
+  if(!parentArr){return}
   //如果是最后一个组件，那么就不下移
-  if(formJson.widgetList.indexOf(widget)===formJson.widgetList.length-1){return}
+  if(parentArr.indexOf(widget)===parentArr.length-1){return}
   //如果不是最后一个组件，那么就下移
   else{
     saveHistory()
-    const i = formJson.widgetList.indexOf(widget)
+    const i = parentArr.indexOf(widget)
   // 下移：交换 i 和 i+1
-  const tmp = formJson.widgetList[i]
-  formJson.widgetList[i] = formJson.widgetList[i+1]
-  formJson.widgetList[i+1] = tmp  
+  const tmp = parentArr[i]
+  parentArr[i] = parentArr[i+1]
+  parentArr[i+1] = tmp  
   }
 }
-
+//选中父组件
+const selectParentWidget=(widget:Widget|null)=>{
+  if(!widget){return}
+  const parentArr=findParentArray(formJson.widgetList, widget)
+  if(!parentArr){return}
+  //拿到父组件的id
+  if (parentArr === formJson.widgetList) { return }
+  //2. 递归找"children 就是这个数组"的容器
+  const findOwner = (list: Widget[]): Widget | null => {
+  for (const w of list) {
+    if (w.children) {
+      // 二维：判断"某一列 === parentArr"（比引用）
+      for (const col of w.children) {
+        if (col === parentArr) { return w }
+      }
+      // 递归：进每一列里找更深层嵌套的容器
+      for (const col of w.children) {
+        const found = findOwner(col)
+        if (found) return found
+      }
+    }
+  }
+  return null
+}
+const parent=findOwner(formJson.widgetList)
+onselectedParentWidgetId.value=parent?.id||null
+}
 //选到空白地方，把选中的组件清空，并显示formConfig的配置
 const selectedEmpty=()=>{
   onselectedWidget.value=null
@@ -263,7 +320,7 @@ const addWidget=(type:string)=>{
   let name=getNextName(type)
   if(!widget){return}
   formJson.widgetList.push({formItemFlag:widget.formItemFlag,category:widget.category,
-    children:deepClone(widget.children),type:widget.type,id,options:{...deepClone(widget.options),name}})
+  children:deepClone(widget.children),type:widget.type,id,options:{...deepClone(widget.options),name}})
 }
 //预览表单
 const previewForm=()=>{
@@ -339,13 +396,34 @@ const clearValidate=()=>{
   rendererRef.value.clearValidate(onselectedWidget.value?.options.name)
 }
 //给formData中的每一个name一个唯一、稳定、有意义的值
-const getNextName=(type:string)=>{
+const getNextName = (type: string) => {
+  //递归查找整棵树是否存在name
+  const hasName=(list:Widget[],name:string):boolean=>{
+    return list.some(widget=>{
+      // 当前节点匹配
+      if (widget.type === type && widget.options.name === name) {
+        return true
+      }
+      // 递归子节点（这里子数组字段按需改：widget.widgetList / widget.children）
+      if (widget.children && widget.children.length > 0) {
+        //递归两列子节点
+        for(const column of widget.children){
+          if(hasName(column,name)){
+            return true
+          }
+        }
+        return false
+      }
+      return false
+    })
+  }
   let i=1
-  while(formJson.widgetList.some(widget=>widget.type===type&&widget.options.name===type+i)){
+  while(hasName(formJson.widgetList,type+i)){
     i++
   }
   return type+i
 }
+
 const undoStack=ref<any[]>([])//里面存的是撤销栈
 //撤销与重做
 const undo=()=>{

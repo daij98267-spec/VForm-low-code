@@ -8,7 +8,8 @@
                        :label-position="formJson.formConfig.labelPosition"
                        >
     <!--画布只接收，不能往外拖，与组件库共用一个group-->
-    <draggable v-model="widgetList" item-key="id" :group="{ name:'widgets', pull:false, put:true }">
+    <draggable v-model="widgetList" item-key="id" :group="{ name:'widgets', pull:true, put:true }"
+    >
         <template #item="{element:widget}">
             <div>
             <!--如果是容器组件-->
@@ -73,6 +74,9 @@ const moveUp=(widget:any)=>{
 //下移组件
 const moveDown=(widget:any)=>{
     emit('moveDown-widget',widget)
+}
+const selectParentWidget=(widget:any)=>{
+    emit('select-widget',widget)
 }
 //获取表单数据
 function getFormData(){
