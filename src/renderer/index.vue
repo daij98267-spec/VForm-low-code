@@ -51,7 +51,7 @@ import draggable from 'vuedraggable'
 import { computed,ref,provide } from 'vue'
 import ContainerWidget from './ContainerWidget.vue'
 
-const emit = defineEmits(['select-widget','remove-widget','copy-widget','moveUp-widget','moveDown-widget','record-widgets'])
+const emit = defineEmits(['select-widget','remove-widget','copy-widget','moveUp-widget','moveDown-widget','record-widgets','select-parent-widget'])
 const props = defineProps<{ formJson: any, formData: Record<string, any>,selectedWidgetId?:any,preview?:boolean }>()//约定好需要的东西
 //把选中的组件递给designer，属性面板里面控制
 const selectWidget=(widget:any)=>{
@@ -76,7 +76,7 @@ const moveDown=(widget:any)=>{
     emit('moveDown-widget',widget)
 }
 const selectParentWidget=(widget:any)=>{
-    emit('select-widget',widget)
+    emit('select-parent-widget',widget)
 }
 //获取表单数据
 function getFormData(){
@@ -114,6 +114,7 @@ const getRules=(widget:any)=>{
 }
 provide('formCtx', {
     selectWidget,
+    selectParentWidget,
     removeWidget,
     copyWidget,
     moveUp,

@@ -61,10 +61,6 @@
         <el-aside width="300px" class="designer-aside">
           <!--属性面板-->
           <div class="widget-properties">
-            <!--选中父组件，显示父组件的属性-->
-            <div v-if="onselectedParentWidgetId">
-              <el-input v-model="onselectedParentWidgetId" placeholder="请输入父组件id"></el-input>
-            </div>
             <!--属性面板显示表单的配置-->
             <div v-if="!onselectedWidget" class="form-property-config">
               <el-input-number v-model="formJson.formConfig.labelWidth" placeholder="请输入标签宽度"></el-input-number>
@@ -82,11 +78,13 @@
             </div>
             <!--属性面板显示选中的组件-->
             <div v-if="onselectedWidget" class="widget-property-item">
+              <div v-if="onselectedWidget.formItemFlag==true">
               <!--必填/非必填-->
                 <el-switch v-model="onselectedWidget.options.required" 
                 :active-value="true" :inactive-value="false" 
                 active-text="必填" inactive-text="非必填"
                 @change="clearValidate"></el-switch>
+                </div>
                 <el-input v-model="onselectedWidget.options.label" placeholder="请输入组件名称"/>
                 <el-input v-model="onselectedWidget.options.placeholder" placeholder="请输入占位符"/>
                 <el-input v-model="onselectedWidget.options.name" placeholder="请输入组件字段名"/>
@@ -264,14 +262,13 @@ const selectParentWidget=(widget:Widget|null)=>{
   return null
 }
 const parent=findOwner(formJson.widgetList)
-onselectedParentWidgetId.value=parent?.id||null
+selectedWidget(parent)
 }
 //选到空白地方，把选中的组件清空，并显示formConfig的配置
 const selectedEmpty=()=>{
   onselectedWidget.value=null
   onselectedWidgetId.value=null
   //在属性面板显示formConfig的配置
-  console.log(111)
 }
 //选中组件
 const selectedWidget=(widget:Widget|null)=>{
