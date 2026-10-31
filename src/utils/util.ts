@@ -1,5 +1,6 @@
 import type { Widget } from '../utils/type.ts'
 import { onMounted } from 'vue'
+import { FormValidators } from './validators.ts'
 
 export function generateId(prefix = ''): string {
   const timestamp = Date.now().toString(36)
@@ -72,11 +73,21 @@ export function buildDefaultFormJson(){
 }
 //根据控件类型返回校验规则
 export function getRules(widget: Widget) {
-    if (widget.options.required===true) {
-      const trigger = ['input', 'textarea'].includes(widget.type) ? 'blur' : 'change'
-      return [{ required: true, message: widget.options.requiredHint || '请输入' + widget.options.label, trigger }]
+  const rules: any[] = []
+  const trigger = ['input', 'textarea'].includes(widget.type) ? 'blur' : 'change'
+  //如果字段必填
+  if (widget.options.required === true) {
+      rules.push({ required: true, message: widget.options.requiredHint || '请输入' + widget.options.label, trigger })
     }
-    return []
+    //如果字段有校验规则
+    if (widget.options.validation && FormValidators[widget.options.validation]) {
+      rules.push({
+        validator: FormValidators[widget.options.validation],
+        errorMsg: widget.options.validationHint,
+        trigger,
+      })
+    }
+    return rules
   }
 //formData里的值加上一个默认值
 export function useFieldDefault(formData: Record<string, any>, widget: Widget){
