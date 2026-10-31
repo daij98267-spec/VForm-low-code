@@ -13,7 +13,9 @@
         <template #item="{element:widget}">
             <div>
             <!--如果是容器组件-->
-        <ContainerWidget v-if="widget.formItemFlag === false" :widget="widget" :formData="formData" />
+        <ContainerWidget v-if="widget.formItemFlag === false" :widget="widget" :formData="formData"
+        @add-col="(w,i)=>emit('add-col',w,i)"
+        @remove-col="(w,i)=>emit('remove-col',w,i)" />
         <el-form-item v-else :label="widget.options.label"  
                       :class="{'highlight':widget.id===props.selectedWidgetId&&!props.preview}"
                       :prop="widget.options.name"
@@ -51,7 +53,9 @@ import draggable from 'vuedraggable'
 import { computed,ref,provide } from 'vue'
 import ContainerWidget from './ContainerWidget.vue'
 
-const emit = defineEmits(['select-widget','remove-widget','copy-widget','moveUp-widget','moveDown-widget','record-widgets','select-parent-widget'])
+const emit = defineEmits(['select-widget','remove-widget','copy-widget','moveUp-widget','moveDown-widget','record-widgets','select-parent-widget'
+    ,'add-col','remove-col'
+])
 const props = defineProps<{ formJson: any, formData: Record<string, any>,selectedWidgetId?:any,preview?:boolean }>()//约定好需要的东西
 //把选中的组件递给designer，属性面板里面控制
 const selectWidget=(widget:any)=>{

@@ -21,6 +21,8 @@
                 v-if="child.formItemFlag === false"
                 :widget="child"
                 :formData="formData"
+                 @add-col="(w,i)=>emit('add-col',w,i)"
+                 @remove-col="(w,i)=>emit('remove-col',w,i)"
               />
               <!-- 孩子是字段 → 叶子，正常渲染 -->
               <el-form-item
@@ -43,20 +45,26 @@
             </div>
           </template>
         </draggable>
+          <!--右下角两个按钮，增加列和删除列-->
+          <el-button type="success" size="small" v-if="!preview" @click.stop="emit('add-col',props.widget,i)">增加列</el-button>
+          <el-button type="danger" size="small" v-if="!preview" @click.stop="emit('remove-col',props.widget,i)">删除列</el-button>
       </el-col>
     </el-row>
   </template>
 
   <script setup lang="ts">
-  import { computed, inject } from 'vue'
+  import { computed, inject,defineEmits } from 'vue'
   import { basicFields } from '../widgets/registry'
   import type { Widget } from '../utils/type.ts'
   import draggable from 'vuedraggable'
+
 
   const props = defineProps<{
     widget: Widget
     formData: Record<string, any>
   }>()
+
+  const emit = defineEmits(['add-col','remove-col'])
 
   // 列数 = children.length。原来读 options.cols，现在删掉，直接数数组
   const colCount = computed(() => props.widget.children?.length || 1)
@@ -74,6 +82,7 @@
     selectWidget, removeWidget, copyWidget, moveUp, moveDown,
     selectedWidgetId, preview,selectParentWidget
   } = inject<any>('formCtx')!
+
   </script>
 
   <style scoped>

@@ -55,6 +55,8 @@
          @record-widgets="recordWidgets"
          @select-parent-widget="selectParentWidget"
          :selectedWidgetId="onselectedWidgetId"
+         @add-col="addCol"
+         @remove-col="removeCol"
          />
         </div>
         </el-main>
@@ -145,6 +147,7 @@ import type { Widget ,FieldOption} from '../utils/type.ts'
 import { ElMessage } from 'element-plus'
 import { getDefaultFormConfig } from '../utils/util.ts'
 import draggable from 'vuedraggable'
+import ElMessageBox from 'element-plus'
 
 const onselectedWidgetId=ref<string|null>(null)//被选中组件的id
 const onselectedParentWidgetId=ref<string|null>(null)//被选中的父组件的id
@@ -447,7 +450,23 @@ const redo=()=>{
   undoStack.value.push(deepClone(formJson))
   Object.assign(formJson,redoStack.value.pop()||{})
 }
+//增加列
+const addCol=(widget:any,index:number)=>{
+  saveHistory()
+  //如果当前列数小于4，就在右边插入一列
+  if(widget.children.length<4){
+    widget.children.splice(index + 1, 0, [])
+  }
 
+}
+const removeCol = (widget: any, index: number) => {
+  saveHistory()
+  // widget = 容器
+  // 第 index 列里的节点数：
+  widget.children[index].length > 0     // ✓（你写的 widgets[index].children ✗）
+  // 删除第 index 列：
+  widget.children.splice(index, 1)      // ✓（你写的 widgets.splice ✗，容器是对象没有 splice）
+}
 
 </script>
 
