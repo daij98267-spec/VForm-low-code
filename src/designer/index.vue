@@ -387,6 +387,7 @@ provide('formCtx', {
     selectedWidgetId: computed(() => onselectedWidgetId.value),
 })
 </script>
+
 <style scoped>
 .designer {
   display: flex;
@@ -575,5 +576,27 @@ provide('formCtx', {
   padding: 24px;
   overflow-y: auto;
 }
+/* 滚动条美化 */
+.library-content::-webkit-scrollbar,
+.widget-properties::-webkit-scrollbar,
+.renderer::-webkit-scrollbar,
+.designer-canvas::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
 
+.library-content::-webkit-scrollbar-thumb,
+.widget-properties::-webkit-scrollbar-thumb,
+.renderer::-webkit-scrollbar-thumb,
+.designer-canvas::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 3px;
+}
+
+.library-content::-webkit-scrollbar-thumb:hover,
+.widget-properties::-webkit-scrollbar-thumb:hover,
+.renderer::-webkit-scrollbar-thumb:hover,
+.designer-canvas::-webkit-scrollbar-thumb:hover {
+  background: #909399;
+}
 </style>

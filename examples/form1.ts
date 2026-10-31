@@ -10,7 +10,8 @@ widgetList.push({
     label:'姓名',
     name:'name',
     placeholder:'请输入姓名',
-    required:true
+    required:true,
+    defaultValue:''
     },
     category:'field',
     formItemFlag:true,
@@ -22,7 +23,8 @@ widgetList.push({
     label:'描述',//给人看
     name:'description',//给机器看
     placeholder:'请输入描述',
-    required:true
+    required:true,
+    defaultValue:''
 },
     category:'field',
     formItemFlag:true,
@@ -35,6 +37,7 @@ widgetList.push({
     formItemFlag: true,
     options: {                    // ← 盒子（配置包装对象），所有组件都有
       name: 'gender',
+      defaultValue:'男',
       label: '性别',
       placeholder: '请选择性别',
       optionItems: [              // ← 下拉的选项列表，住进盒子里，换了个名
@@ -62,7 +65,8 @@ widgetList.push({
         label:'姓名',
         name:'name_1',
         placeholder:'请输入姓名',
-        required:true
+        required:true,
+        defaultValue:''
         },
         category:'field',
         formItemFlag:true,
@@ -74,7 +78,8 @@ widgetList.push({
         label:'描述',//给人看
         name:'description_1',//给机器看
         placeholder:'请输入描述',
-        required:true
+        required:true,
+        defaultValue:''
         },
         category:'field',
         formItemFlag:true,
@@ -87,6 +92,7 @@ widgetList.push({
         type:'select',
         options:{
         name:'gender_1',
+        defaultValue:'男',
         label: '性别',
         placeholder: '请选择性别',
         optionItems: [
@@ -105,7 +111,8 @@ widgetList.push({
         label:'手机号',
         name:'phone_1',
         placeholder:'请输入手机号',
-        required:true
+        required:true,
+        defaultValue:''
         },
         category:'field',
         formItemFlag:true,

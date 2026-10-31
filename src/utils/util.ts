@@ -1,4 +1,6 @@
 import type { Widget } from '../utils/type.ts'
+import { onMounted } from 'vue'
+
 export function generateId(prefix = ''): string {
   const timestamp = Date.now().toString(36)
   const random = Math.random().toString(36).slice(2, 8)
@@ -68,10 +70,19 @@ export function buildDefaultFormJson(){
         formConfig: deepClone(getDefaultFormConfig())
     }
 }
+//根据控件类型返回校验规则
 export function getRules(widget: Widget) {
-    if (widget.options.required) {
+    if (widget.options.required===true) {
       const trigger = ['input', 'textarea'].includes(widget.type) ? 'blur' : 'change'
-      return [{ required: true, message: '请输入' + widget.options.label, trigger }]
+      return [{ required: true, message: widget.options.requiredHint || '请输入' + widget.options.label, trigger }]
     }
     return []
   }
+//formData里的值加上一个默认值
+export function useFieldDefault(formData: Record<string, any>, widget: Widget){
+  onMounted(()=>{
+    if(formData[widget.options.name]===undefined&&widget.options.defaultValue!==undefined){
+      formData[widget.options.name] =deepClone(widget.options.defaultValue)
+    }
+  })
+}
