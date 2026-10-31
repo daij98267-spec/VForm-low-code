@@ -47,73 +47,17 @@
           </div>
           <div class="renderer" @click="selectedEmpty">
         <Renderer ref="rendererRef" :formJson="formJson" :formData="formData"
-         @select-widget="selectedWidget"
-         @remove-widget="removeWidget"
-         @copy-widget="copyWidget"
-         @moveUp-widget="moveUp"
-         @moveDown-widget="moveDown"
-         @record-widgets="recordWidgets"
-         @select-parent-widget="selectParentWidget"
-         :selectedWidgetId="onselectedWidgetId"
-         @add-col="addCol"
-         @remove-col="removeCol"
          />
         </div>
         </el-main>
         <el-aside width="300px" class="designer-aside">
           <!--属性面板-->
-          <div class="widget-properties">
-            <!--属性面板显示表单的配置-->
-            <div v-if="!onselectedWidget" class="form-property-config">
-              <el-input-number v-model="formJson.formConfig.labelWidth" placeholder="请输入标签宽度"></el-input-number>
-              <el-select v-model="formJson.formConfig.labelPosition" placeholder="请选择标签对齐方式">
-                <el-option label="左对齐" value="left" />
-                <el-option label="顶部" value="top" />
-                <el-option label="右对齐" value="right" />
-              </el-select>
-              <el-select v-model="formJson.formConfig.size" placeholder="请选择组件大小">
-                <el-option label="小" value="small" />
-                <el-option label="默认" value="" />
-                <el-option label="大" value="large" />
-              </el-select>
-              
-            </div>
-            <!--属性面板显示选中的组件-->
-            <div v-if="onselectedWidget" class="widget-property-item">
-              <div v-if="onselectedWidget.formItemFlag==true">
-              <!--必填/非必填-->
-                <el-switch v-model="onselectedWidget.options.required" 
-                :active-value="true" :inactive-value="false" 
-                active-text="必填" inactive-text="非必填"
-                @change="clearValidate"></el-switch>
-                </div>
-                <el-input v-model="onselectedWidget.options.label" placeholder="请输入组件名称"/>
-                <el-input v-model="onselectedWidget.options.placeholder" placeholder="请输入占位符"/>
-                <el-input v-model="onselectedWidget.options.name" placeholder="请输入组件字段名"/>
-                <!--<el-input v-model="onselectedWidget" placeholder="显示组件的父组件"></el-input>-->
-               <!--下拉框选项--> 
-                <div v-if="onselectedWidget.type==='select'||onselectedWidget.type==='radio'||onselectedWidget.type==='checkbox'" class="widget-property-item">
-                <div v-for="(item,index) in onselectedWidget.options.optionItems" :key="index">
-                  <el-input v-model="item.label" placeholder="请输入选项名称"/>
-                  <el-input v-model="item.value" placeholder="请输入选项值"/>
-                  <el-button type="warning" @click="removeOption(item)">删除</el-button>
-                </div>
-                <!--新增按钮-->
-                <el-button type="primary" @click="addOption">新增选项</el-button>
-                </div>
-                <!--滑块选项-->
-                <div v-if="onselectedWidget.type==='slider' && onselectedWidget.options.sliderItems" class="widget-property-item">
-                  <el-input-number v-model="onselectedWidget.options.sliderItems.min" placeholder="请输入最小值"/>
-                  <el-input-number v-model="onselectedWidget.options.sliderItems.max" placeholder="请输入最大值"/>
-                  <el-input-number v-model="onselectedWidget.options.sliderItems.step" placeholder="请输入步长"/>
-                </div>
-                <!--开关选项-->
-                <div v-if="onselectedWidget.type==='switch' && onselectedWidget.options.switchItems" class="widget-property-item">
-                  <el-input v-model="onselectedWidget.options.switchItems.activeValue" placeholder="请输入激活值"/>
-                  <el-input v-model="onselectedWidget.options.switchItems.inactiveValue" placeholder="请输入非激活值"/>
-                </div>
-          </div>
-          </div>
+          <PropertyPanel
+           :onselectedWidget="onselectedWidget"
+           :formJson="formJson"
+           @clear-validate="clearValidate"
+           @remove-option="removeOption"
+           @add-option="addOption" />
         </el-aside>
       </el-container>
     </div>
@@ -141,16 +85,16 @@
 import Renderer from '../renderer/index.vue'
 import {basicFieldsLabel } from '../widgets/registry.ts'
 import form1 from '../../examples/form1.ts'
-import { ref,reactive } from 'vue'
+import { ref,reactive,provide,computed } from 'vue'
 import {generateId,deepClone} from '../utils/util.ts'
 import type { Widget ,FieldOption} from '../utils/type.ts'
-import { ElMessage } from 'element-plus'
+import { ElMessage,ElMessageBox } from 'element-plus'
 import { getDefaultFormConfig } from '../utils/util.ts'
 import draggable from 'vuedraggable'
-import ElMessageBox from 'element-plus'
+import { hasName,findParentArray,findOwner } from '../utils/tree.ts'
+import PropertyPanel from '../designer/PropertyPanel.vue'
 
 const onselectedWidgetId=ref<string|null>(null)//被选中组件的id
-const onselectedParentWidgetId=ref<string|null>(null)//被选中的父组件的id
 const onselectedWidget=ref<Widget|null>(null)//被选中的组件
 const previewVisible=ref<boolean>(false)//预览表窗是否可见
 const exportJsonVisible=ref<boolean>(false)//导出Json弹窗是否可见
@@ -162,22 +106,6 @@ const formJson = reactive<{ widgetList: Widget[]; formConfig: any }>(form1)
 const formData=reactive<Record<string, any>>({})
 const rendererRef=ref()//渲染器的引用
 
-const findParentArray = (list: Widget[], widget: Widget | null): Widget[] | null => {
-    for (const item of list) {
-      // 命中：widget 直接在这个 list 里，返回这个 list（就是它「所属的那一列」）
-      if (item.id === widget?.id) {
-        return list
-      }
-      // 没命中但有孩子（children 是二维，每一列是一个 Widget[]），逐列递归
-      if (item.children) {
-        for (const column of item.children) {
-          const found = findParentArray(column, widget)
-          if (found) return found
-        }
-      }
-    }
-    return null
-  }
 //删除组件
 const removeWidget=(widget:Widget|null)=>{
     if(onselectedWidget.value?.id===widget?.id){//如果选中的组件是删除的组件，那么选中的组件就为空
@@ -247,24 +175,7 @@ const selectParentWidget=(widget:Widget|null)=>{
   if(!parentArr){return}
   //拿到父组件的id
   if (parentArr === formJson.widgetList) { return }
-  //2. 递归找"children 就是这个数组"的容器
-  const findOwner = (list: Widget[]): Widget | null => {
-  for (const w of list) {
-    if (w.children) {
-      // 二维：判断"某一列 === parentArr"（比引用）
-      for (const col of w.children) {
-        if (col === parentArr) { return w }
-      }
-      // 递归：进每一列里找更深层嵌套的容器
-      for (const col of w.children) {
-        const found = findOwner(col)
-        if (found) return found
-      }
-    }
-  }
-  return null
-}
-const parent=findOwner(formJson.widgetList)
+const parent=findOwner(formJson.widgetList,parentArr)
 selectedWidget(parent)
 }
 //选到空白地方，把选中的组件清空，并显示formConfig的配置
@@ -398,25 +309,6 @@ const clearValidate=()=>{
 //给formData中的每一个name一个唯一、稳定、有意义的值
 const getNextName = (type: string) => {
   //递归查找整棵树是否存在name
-  const hasName=(list:Widget[],name:string):boolean=>{
-    return list.some(widget=>{
-      // 当前节点匹配
-      if (widget.type === type && widget.options.name === name) {
-        return true
-      }
-      // 递归子节点（这里子数组字段按需改：widget.widgetList / widget.children）
-      if (widget.children && widget.children.length > 0) {
-        //递归两列子节点
-        for(const column of widget.children){
-          if(hasName(column,name)){
-            return true
-          }
-        }
-        return false
-      }
-      return false
-    })
-  }
   let i=1
   while(hasName(formJson.widgetList,type+i)){
     i++
@@ -460,18 +352,41 @@ const addCol=(widget:any,index:number)=>{
 
 }
 const removeCol = (widget: any, index: number) => {
-  saveHistory()
-  // widget = 容器
-  // 第 index 列里的节点数：
-  widget.children[index].length > 0     // ✓（你写的 widgets[index].children ✗）
-  // 删除第 index 列：
-  widget.children.splice(index, 1)      // ✓（你写的 widgets.splice ✗，容器是对象没有 splice）
+  //如果这个容器只有一行，不能删除
+  if(widget.children.length===1){
+    ElMessage.error({
+      message: '至少保留有一列',
+      type: 'error'
+    })
+    return
+  }
+  //如果这一列有组件，向用户确认是否删除
+  if(widget.children[index].length>0){
+    ElMessageBox.confirm('确认删除这一列吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }).then(() => {
+      //判断选中组件在不在这个删除的列里面
+      if(widget.children[index].find((item:Widget)=>item.id===onselectedWidget.value?.id)){
+        onselectedWidget.value=null
+        onselectedWidgetId.value=null
+      }
+      saveHistory()
+      widget.children.splice(index, 1)
+    })
+  }else{
+    saveHistory()
+    widget.children.splice(index, 1)
+  }
 }
-
+//提供方法，组件之间的通信
+provide('formCtx', {
+    selectedWidget, removeWidget, copyWidget, moveUp, moveDown,
+    selectParentWidget, addCol, removeCol, recordWidgets,
+    selectedWidgetId: computed(() => onselectedWidgetId.value),
+})
 </script>
-
-
-
 <style scoped>
 .designer {
   display: flex;
@@ -661,78 +576,4 @@ const removeCol = (widget: any, index: number) => {
   overflow-y: auto;
 }
 
-/* ============ 右侧属性面板 ============ */
-.widget-properties {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 16px;
-  overflow-y: auto;
-  background: #fff;
-}
-
-.widget-properties :deep(.el-input) {
-  margin-bottom: 12px;
-}
-
-.widget-properties :deep(.el-input__wrapper) {
-  border-radius: 6px;
-  box-shadow: 0 0 0 1px #dcdfe6 inset;
-  transition: box-shadow 0.2s ease;
-}
-
-.widget-properties :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px #c0c4cc inset;
-}
-
-.widget-properties :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px #667eea inset;
-}
-
-.widget-properties :deep(.el-button) {
-  margin-bottom: 10px;
-  border-radius: 6px;
-}
-
-.form-property-config,
-.widget-property-item {
-  display: flex;
-  flex-direction: column;
-}
-
-/* 属性面板标题 */
-.widget-properties::before {
-  content: '属性配置';
-  display: block;
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-/* 滚动条美化 */
-.library-content::-webkit-scrollbar,
-.widget-properties::-webkit-scrollbar,
-.renderer::-webkit-scrollbar,
-.designer-canvas::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.library-content::-webkit-scrollbar-thumb,
-.widget-properties::-webkit-scrollbar-thumb,
-.renderer::-webkit-scrollbar-thumb,
-.designer-canvas::-webkit-scrollbar-thumb {
-  background: #c0c4cc;
-  border-radius: 3px;
-}
-
-.library-content::-webkit-scrollbar-thumb:hover,
-.widget-properties::-webkit-scrollbar-thumb:hover,
-.renderer::-webkit-scrollbar-thumb:hover,
-.designer-canvas::-webkit-scrollbar-thumb:hover {
-  background: #909399;
-}
 </style>

@@ -21,9 +21,7 @@
                 v-if="child.formItemFlag === false"
                 :widget="child"
                 :formData="formData"
-                 @add-col="(w,i)=>emit('add-col',w,i)"
-                 @remove-col="(w,i)=>emit('remove-col',w,i)"
-              />
+                />
               <!-- 孩子是字段 → 叶子，正常渲染 -->
               <el-form-item
                 v-else
@@ -31,7 +29,7 @@
                 :prop="child.options.name"
                 :rules="getRules(child)"
                 :class="{ highlight: child.id === selectedWidgetId && !preview }"
-                @click.stop="selectWidget(child)"
+                @click.stop="selectedWidget(child)&&!preview"
               >
                 <component :is="basicFields[child.type]" :widget="child" :formData="formData" />
                 <br>
@@ -46,42 +44,31 @@
           </template>
         </draggable>
           <!--右下角两个按钮，增加列和删除列-->
-          <el-button type="success" size="small" v-if="!preview" @click.stop="emit('add-col',props.widget,i)">增加列</el-button>
-          <el-button type="danger" size="small" v-if="!preview" @click.stop="emit('remove-col',props.widget,i)">删除列</el-button>
+          <el-button type="success" size="small" v-if="!preview" @click.stop="addCol(widget,i)">增加列</el-button>
+          <el-button type="danger" size="small" v-if="!preview" @click.stop="removeCol(widget,i)">删除列</el-button>
       </el-col>
     </el-row>
   </template>
 
   <script setup lang="ts">
-  import { computed, inject,defineEmits } from 'vue'
+  import { computed, inject } from 'vue'
   import { basicFields } from '../widgets/registry'
   import type { Widget } from '../utils/type.ts'
   import draggable from 'vuedraggable'
-
-
+  import { getRules } from '../utils/util.ts'
+  //接收数据
+ const {
+    selectedWidget, removeWidget, copyWidget, moveUp, moveDown,
+    selectedWidgetId,selectParentWidget,addCol,removeCol,
+  } = inject<any>('formCtx')!
+  const preview = inject('preview')
   const props = defineProps<{
     widget: Widget
     formData: Record<string, any>
   }>()
-
-  const emit = defineEmits(['add-col','remove-col'])
-
   // 列数 = children.length。原来读 options.cols，现在删掉，直接数数组
   const colCount = computed(() => props.widget.children?.length || 1)
 
-  // 和 renderer/index.vue 里那份一样，回头抽 util.ts 共享
-  const getRules = (widget: Widget) => {
-    if (widget.options.required) {
-      const trigger = ['input', 'textarea'].includes(widget.type) ? 'blur' : 'change'
-      return [{ required: true, message: '请输入' + widget.options.label, trigger }]
-    }
-    return []
-  }
-
-  const {
-    selectWidget, removeWidget, copyWidget, moveUp, moveDown,
-    selectedWidgetId, preview,selectParentWidget
-  } = inject<any>('formCtx')!
 
   </script>
 

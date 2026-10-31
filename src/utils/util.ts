@@ -1,3 +1,4 @@
+import type { Widget } from '../utils/type.ts'
 export function generateId(prefix = ''): string {
   const timestamp = Date.now().toString(36)
   const random = Math.random().toString(36).slice(2, 8)
@@ -67,4 +68,10 @@ export function buildDefaultFormJson(){
         formConfig: deepClone(getDefaultFormConfig())
     }
 }
-
+export function getRules(widget: Widget) {
+    if (widget.options.required) {
+      const trigger = ['input', 'textarea'].includes(widget.type) ? 'blur' : 'change'
+      return [{ required: true, message: '请输入' + widget.options.label, trigger }]
+    }
+    return []
+  }
