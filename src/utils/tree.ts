@@ -1,4 +1,5 @@
 import type { Widget } from '../utils/type.ts'
+
 //判断树中是否有指定名称的组件
 export function hasName(list:Widget[],name:string):boolean{
     return list.some(widget=>{
@@ -52,4 +53,29 @@ export function findOwner(list: Widget[],parentArr:Widget[]): Widget | null {
     }
   }
   return null
+}
+//删除一个widget要把对应的formData的值都删掉
+export function deleteWidgetFormData(formData: Record<string, any>, widget: Widget | null) {
+    if(!widget){
+      return
+    }
+    if(widget.formItemFlag){
+      //如果这个是叶子节点，直接找到formData的值然后删掉
+      delete formData[widget.options.name]
+      return
+    }
+    else{
+      //如果不是叶子节点，就把它的子节点全都删掉
+      for(const column of widget.children||[]){
+        for(const child of column){
+          deleteWidgetFormData(formData,child)
+        }
+      }
+    }
+}
+//删除某一列的所有组件对应的formData的值
+export function deleteColumnFormData(formData: Record<string, any>, column: Widget[]) {
+    for(const widget of column){
+        deleteWidgetFormData(formData,widget)
+    }
 }

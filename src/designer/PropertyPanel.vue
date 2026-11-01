@@ -20,7 +20,19 @@
                 <!--必填/非必填-->
                 <el-switch v-model="onselectedWidget.options.required" :active-value="true" :inactive-value="false"
                     active-text="必填" inactive-text="非必填" @change="clearValidate"></el-switch>
-            </div>
+                <!--组件的类型是啥，它有对应的校验规则-->
+                <div>
+                  <el-select v-model="onselectedWidget.options.validation" placeholder="请选择该组件的校验规则">
+                    <el-option label="无" value=""></el-option>                    
+                    <el-option label="邮箱" value="email"></el-option>
+                    <el-option label="手机号" value="mobilePhone"></el-option>
+                    <el-option label="年龄" value="age"></el-option>
+                    <el-option label="数字" value="number"></el-option>
+                  </el-select>
+                  <!--校验提示语提示，有规则才有提示语-->
+                  <el-input v-if="onselectedWidget.options.validation" v-model="onselectedWidget.options.validationHint" placeholder="请输入校验提示语" />
+                </div>
+                </div>
             <el-input v-model="onselectedWidget.options.label" placeholder="请输入组件名称" />
             <el-input v-model="onselectedWidget.options.placeholder" placeholder="请输入占位符" />
             <el-input v-model="onselectedWidget.options.name" placeholder="请输入组件字段名" />

@@ -44,6 +44,7 @@ export const basicFieldsLabel:  {formItemFlag: boolean;category?: string;childre
         activeValue:true,
         inactiveValue:false
     },required:true}},
-    { type: 'grid', options: { label: '栅格容器' }, formItemFlag: false, category: 'container', children: [[],[]] }
+    { type: 'grid', options: { label: '栅格容器' }, formItemFlag: false, category: 'container', children: [[],[]] },
+    { type:'tabs',options:{label:'选项卡'},formItemFlag:false,category:'container',children:[[],[]]}
 ]
 

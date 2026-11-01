@@ -1,6 +1,6 @@
  <template>
     <!-- 容器：一行 el-row，按列数拆成几个 el-col -->
-    <el-row :gutter="10">
+    <el-row :gutter="10" v-if="widget.type === 'grid'">
       <!-- children 现在是二维数组，children[i] 就是一列 -->
       <el-col
         v-for="(col, i) in (widget.children || [])"
@@ -48,6 +48,9 @@
           <el-button type="danger" size="small" v-if="!preview" @click.stop="removeCol(widget,i)">删除列</el-button>
       </el-col>
     </el-row>
+
+    <!--选项卡容器-->
+    
   </template>
 
   <script setup lang="ts">

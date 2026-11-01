@@ -91,7 +91,7 @@ import type { Widget ,FieldOption} from '../utils/type.ts'
 import { ElMessage,ElMessageBox } from 'element-plus'
 import { getDefaultFormConfig } from '../utils/util.ts'
 import draggable from 'vuedraggable'
-import { hasName,findParentArray,findOwner } from '../utils/tree.ts'
+import { hasName,findParentArray,findOwner,deleteWidgetFormData,deleteColumnFormData } from '../utils/tree.ts'
 import PropertyPanel from '../designer/PropertyPanel.vue'
 
 const onselectedWidgetId=ref<string|null>(null)//被选中组件的id
@@ -117,6 +117,8 @@ const removeWidget=(widget:Widget|null)=>{
     if(!widget){return}
     const parentArr = findParentArray(formJson.widgetList, widget)
     if(!parentArr){return}
+    //删除组件对应的formData的值
+    deleteWidgetFormData(formData,widget)
     parentArr.splice(parentArr.indexOf(widget),1)
   }
 //复制组件
@@ -258,6 +260,8 @@ const importJsonSubmit=()=>{
     //判断是否是Json字符串，是否有widgetList和formConfig，widgetList是否是数组，formConfig是否是对象
     if (json.widgetList && json.formConfig && Array.isArray(json.widgetList) && typeof json.formConfig === 'object') {
       saveHistory()
+      //删除旧的formData的值
+      deleteColumnFormData(formData,formJson.widgetList)
       formJson.widgetList = json.widgetList
       formJson.formConfig = json.formConfig
       //导入新Json后，属性面板指向的当前组件要清空为null
@@ -317,30 +321,40 @@ const getNextName = (type: string) => {
 }
 
 const undoStack=ref<any[]>([])//里面存的是撤销栈
+const undoFormData=ref<any>([])//里面存的是撤销栈的formData
 //撤销与重做
 const undo=()=>{
   if(undoStack.value.length===0){
     return
   }
-  redoStack.value.push(deepClone(formJson))
-  console.log(undoStack.value)
+   redoStack.value.push(deepClone(formJson))
+   redoFormData.value.push(deepClone(formData))
   Object.assign(formJson,undoStack.value.pop()||{})
+  Object.keys(formData).forEach(key => delete formData[key])
+  Object.assign(formData,undoFormData.value.pop()||{})
 }
 //存档
 const saveHistory=()=>{
   //把当前的状态压入撤销栈
   //每次操作前存档
   undoStack.value.push(deepClone(formJson))
+  //存formData的值
+  undoFormData.value.push(deepClone(formData))
   redoStack.value=[]
+  redoFormData.value=[]
 }
 //重做，重做本身也要存档放到栈里面
 const redoStack=ref<any[]>([])//里面存的是重做栈
+const redoFormData=ref<any>([])//里面存的是重做栈的formData
 const redo=()=>{
   if(redoStack.value.length===0){
     return
   }
   undoStack.value.push(deepClone(formJson))
+  undoFormData.value.push(deepClone(formData))
   Object.assign(formJson,redoStack.value.pop()||{})
+  Object.keys(formData).forEach(key => delete formData[key])
+  Object.assign(formData,redoFormData.value.pop()||{})
 }
 //增加列
 const addCol=(widget:any,index:number)=>{
@@ -373,6 +387,8 @@ const removeCol = (widget: any, index: number) => {
         onselectedWidgetId.value=null
       }
       saveHistory()
+      //删除组件对应的formData的值
+      deleteColumnFormData(formData,widget.children[index])
       widget.children.splice(index, 1)
     })
   }else{

@@ -112,7 +112,9 @@ widgetList.push({
         name:'phone_1',
         placeholder:'请输入手机号',
         required:true,
-        defaultValue:''
+        defaultValue:'',
+        validation:'mobilePhone',
+        validationHint:'请输入正确的手机号'
         },
         category:'field',
         formItemFlag:true,
