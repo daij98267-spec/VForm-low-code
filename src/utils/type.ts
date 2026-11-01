@@ -16,6 +16,8 @@
     requiredHint?: string//必填的自定义提示语
     validation?: string//校验类型名，如 email、mobilePhone，或一个正则字符串
     validationHint?: string//这条校验的自定义提示语
+    tabNames?: string[]//选项卡的名称
+    visibleWhen?: { field: string; value: any }//当 formData 里 key 为`field` 的那个字段的值`===``value` 时，我这个组件才显示；否则隐藏
   }
 
   // 一个完整控件

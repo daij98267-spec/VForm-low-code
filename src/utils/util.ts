@@ -97,3 +97,18 @@ export function useFieldDefault(formData: Record<string, any>, widget: Widget){
     }
   })
 }
+
+export function isVisible(widget:Widget,formData: Record<string, any>):boolean{
+  if(widget.options.visibleWhen){
+    //先拿到此widget依赖的那个值
+    const value=formData[widget.options.visibleWhen.field]
+    //如果此值等于`value`，则显示
+    if(value===widget.options.visibleWhen.value){
+      return true
+    }
+    else{
+      return false
+    }
+  }
+  return true//默认显示是true
+}

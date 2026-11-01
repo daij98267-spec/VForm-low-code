@@ -15,7 +15,7 @@
             <!--如果是容器组件-->
         <ContainerWidget v-if="widget.formItemFlag === false" :widget="widget" :formData="formData"
          />
-        <el-form-item v-else :label="widget.options.label"  
+        <el-form-item v-else-if="isVisible(widget,formData)" :label="widget.options.label"  
                       :class="{'highlight':widget.id===selectedWidgetId&&!preview}"
                       :prop="widget.options.name"
                       :rules="getRules(widget)"
@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import { basicFields } from '../widgets/registry'
-import { deepClone } from '../utils/util.ts'
+import { deepClone,isVisible } from '../utils/util.ts'
 import draggable from 'vuedraggable'
 import { computed,ref,provide,inject } from 'vue'
 import ContainerWidget from './ContainerWidget.vue'

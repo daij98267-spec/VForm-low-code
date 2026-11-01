@@ -16,6 +16,7 @@
         </div>
         <!--属性面板显示选中的组件-->
         <div v-if="onselectedWidget" class="widget-property-item">
+            <!--叶子组件特有的属性-->
             <div v-if="onselectedWidget.formItemFlag == true">
                 <!--必填/非必填-->
                 <el-switch v-model="onselectedWidget.options.required" :active-value="true" :inactive-value="false"
@@ -32,6 +33,17 @@
                   <!--校验提示语提示，有规则才有提示语-->
                   <el-input v-if="onselectedWidget.options.validation" v-model="onselectedWidget.options.validationHint" placeholder="请输入校验提示语" />
                 </div>
+                <!--组件所依赖的其他组件-->
+                <div>
+
+                </div>
+                </div>
+                <!--容器组件特有的属性-->
+                <div v-if="onselectedWidget.type === 'tabs'">
+                  <!--tab标签-->
+                  <div v-for="(item,index) in onselectedWidget.options.tabNames" :key="index">
+                    <el-input v-model="onselectedWidget.options.tabNames[index]" placeholder="请输入tab标签" />
+                  </div>
                 </div>
             <el-input v-model="onselectedWidget.options.label" placeholder="请输入组件名称" />
             <el-input v-model="onselectedWidget.options.placeholder" placeholder="请输入占位符" />

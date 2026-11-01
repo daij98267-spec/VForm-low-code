@@ -24,7 +24,7 @@
                 />
               <!-- 孩子是字段 → 叶子，正常渲染 -->
               <el-form-item
-                v-else
+                v-else-if="isVisible(child,formData)"
                 :label="child.options.label"
                 :prop="child.options.name"
                 :rules="getRules(child)"
@@ -50,15 +50,49 @@
     </el-row>
 
     <!--选项卡容器-->
-    
+    <el-tabs v-if="widget.type === 'tabs'" v-model="activeTab">
+    <el-tab-pane
+      v-for="(col, i) in (widget.children || [])"
+      :key="i"
+      :label="widget.options.tabNames?.[i]"
+      :name="i"
+    >
+      <draggable :list="col" item-key="id" :group="{ name: 'widgets', pull: true, put: true }" class="col-draggable">
+        <template #item="{ element: child }">
+          <div>
+            <ContainerWidget v-if="child.formItemFlag === false" :widget="child" :formData="formData" />
+            <el-form-item
+              v-else-if="isVisible(child,formData)"
+              :label="child.options.label"
+              :prop="child.options.name"
+              :rules="getRules(child)"
+              :class="{ highlight: child.id === selectedWidgetId && !preview }"
+              @click.stop="selectedWidget(child)&&!preview"
+            >
+              <component :is="basicFields[child.type]" :widget="child" :formData="formData" />
+              <br>
+              <hr>
+              <el-button type="danger" size="small" v-if="!preview" @click.stop="removeWidget(child)">x</el-button>
+              <el-button type="success" size="small" v-if="!preview" @click.stop="copyWidget(child)">复制</el-button>
+              <el-button type="primary" size="small" v-if="!preview" @click.stop="moveUp(child)">↑</el-button>
+              <el-button type="primary" size="small" v-if="!preview" @click.stop="moveDown(child)">↓</el-button>
+              <el-button type="info" size="small" v-if="!preview" @click.stop="selectParentWidget(child)">父组件</el-button>
+            </el-form-item>
+          </div>
+        </template>
+      </draggable>
+      <el-button type="success" size="small" v-if="!preview" @click.stop="addCol(widget,i)">增加tab</el-button>
+      <el-button type="danger" size="small" v-if="!preview" @click.stop="removeCol(widget,i)">删除tab</el-button>
+    </el-tab-pane>
+  </el-tabs>
   </template>
 
   <script setup lang="ts">
-  import { computed, inject } from 'vue'
+  import { computed, inject, ref } from 'vue'
   import { basicFields } from '../widgets/registry'
   import type { Widget } from '../utils/type.ts'
   import draggable from 'vuedraggable'
-  import { getRules } from '../utils/util.ts'
+  import { getRules,isVisible } from '../utils/util.ts'
   //接收数据
  const {
     selectedWidget, removeWidget, copyWidget, moveUp, moveDown,
@@ -71,7 +105,7 @@
   }>()
   // 列数 = children.length。原来读 options.cols，现在删掉，直接数数组
   const colCount = computed(() => props.widget.children?.length || 1)
-
+  const activeTab = ref(0)//响应式，记录当前打开的是第几个标签页
 
   </script>
 

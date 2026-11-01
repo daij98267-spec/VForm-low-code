@@ -4,15 +4,22 @@
     <div class="designer-body">
       <el-container class="designer-container">
         <el-aside width="260px" class="designer-aside">
-          <!--组件库，改成可拖拽的-->
           <div class="widget-library">
+            <!--标签切换-->
             <div class="library-switch">
               <div class="library-tab" :class="{ active: activeTab === 'widgets' }" @click="activeTab = 'widgets'">组件库</div>
               <div class="library-tab" :class="{ active: activeTab === 'templates' }" @click="activeTab = 'templates'">表单模板</div>
             </div>
+            <!--组件库内容-->
             <div v-show="activeTab === 'widgets'" class="library-content">
+              <!--子标签：组件/容器（分段切换式）-->
+              <div class="sub-switch" :class="{ right: libraryTab === 'containers' }">
+                <div class="sub-switch-thumb"></div>
+                <div class="sub-switch-option" :class="{ active: libraryTab === 'fields' }" @click="libraryTab = 'fields'">组件</div>
+                <div class="sub-switch-option" :class="{ active: libraryTab === 'containers' }" @click="libraryTab = 'containers'">容器</div>
+              </div>
               <draggable
-                :list="basicFieldsLabel"
+                :list="libraryWidgets"
                 item-key="type"
                 :group="{ name: 'widgets', pull: 'clone', put: false }"
                 :sort="false"
@@ -24,8 +31,12 @@
         </template>
       </draggable>
             </div>
-            <div v-show="activeTab === 'templates'" class="library-content library-empty">
-              <div class="empty-tip">暂无表单模板</div>
+            <!--表单模板-->
+            <div v-show="activeTab === 'templates'" class="library-content">
+                <el-card v-for="t in templates" :key="t.name" class="template-card" shadow="hover" @click="loadTemplate(t)">
+                  <div class="template-card-name">{{ t.name }}</div>
+                  <div class="template-card-desc">{{ t.description }}</div>
+                </el-card>  
             </div>
           </div>
         </el-aside>
@@ -93,6 +104,7 @@ import { getDefaultFormConfig } from '../utils/util.ts'
 import draggable from 'vuedraggable'
 import { hasName,findParentArray,findOwner,deleteWidgetFormData,deleteColumnFormData } from '../utils/tree.ts'
 import PropertyPanel from '../designer/PropertyPanel.vue'
+import { templates } from '../../examples/templates.ts'
 
 const onselectedWidgetId=ref<string|null>(null)//被选中组件的id
 const onselectedWidget=ref<Widget|null>(null)//被选中的组件
@@ -100,11 +112,26 @@ const previewVisible=ref<boolean>(false)//预览表窗是否可见
 const exportJsonVisible=ref<boolean>(false)//导出Json弹窗是否可见
 const importJsonVisible=ref<boolean>(false)//导入Json弹窗是否可见
 const activeTab=ref<string>('widgets')//左侧面板激活的标签：组件库/表单模板
+const libraryTab=ref<string>('fields')//组件库里激活的子标签：组件/容器
+//按子标签过滤组件库：组件显示formItemFlag为true的字段，容器显示formItemFlag为false的容器
+const libraryWidgets=computed(()=>
+  basicFieldsLabel.filter(w=>libraryTab.value==='fields'?w.formItemFlag===true:w.formItemFlag===false)
+)
 const formJsonStr=ref<string>('')//导出的Json字符串
 const formJsonStr2=ref<string>('')//导入的Json字符串
 const formJson = reactive<{ widgetList: Widget[]; formConfig: any }>(form1)
 const formData=reactive<Record<string, any>>({})
 const rendererRef=ref()//渲染器的引用
+
+//加载模板
+const loadTemplate = (template: any) => {
+    saveHistory()                                              // 先存档，才能撤销
+    Object.keys(formData).forEach(key => delete formData[key]) // 清空旧数据
+    formJson.widgetList = deepClone(template.formJson.widgetList)   // 必须 deepClone！
+    formJson.formConfig = deepClone(template.formJson.formConfig)   // 必须 deepClone！
+    onselectedWidget.value = null                              // 清空选中
+    onselectedWidgetId.value = null
+}
 
 //删除组件
 const removeWidget=(widget:Widget|null)=>{
@@ -358,12 +385,30 @@ const redo=()=>{
 }
 //增加列
 const addCol=(widget:any,index:number)=>{
-  saveHistory()
   //如果当前列数小于4，就在右边插入一列
   if(widget.children.length<4){
+    //如果是tabs容器，增加一个tab标签
+  if(widget.type==='tabs'){
+    //在此列后面增加一个tab标签，弹窗请输入tab标签
+    ElMessageBox.prompt('请输入tab标签', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'info'
+    }).then((tabName) => {
+      if(tabName.value){
+        saveHistory()
+        widget.options.tabNames.splice(index + 1, 0, tabName.value)
+        widget.children.splice(index + 1, 0, [])
+      }
+    }).catch(() => {
+      //用户点击了取消，不执行任何操作
+    })
+  }
+  else if(widget.type==='grid'){
+    saveHistory()
     widget.children.splice(index + 1, 0, [])
   }
-
+  }
 }
 const removeCol = (widget: any, index: number) => {
   //如果这个容器只有一行，不能删除
@@ -387,12 +432,22 @@ const removeCol = (widget: any, index: number) => {
         onselectedWidgetId.value=null
       }
       saveHistory()
+      //如果是tabs容器，删除一个tab标签
+    if(widget.type==='tabs'){
+      widget.options.tabNames.splice(index, 1)
+    }
       //删除组件对应的formData的值
       deleteColumnFormData(formData,widget.children[index])
       widget.children.splice(index, 1)
     })
   }else{
     saveHistory()
+    //如果是tabs容器，删除一个tab标签
+    //删除组件对应的formData的值
+    deleteColumnFormData(formData,widget.children[index])
+    if(widget.type==='tabs'){
+      widget.options.tabNames.splice(index, 1)
+    }
     widget.children.splice(index, 1)
   }
 }
@@ -490,6 +545,49 @@ provide('formCtx', {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-color: transparent;
   box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+}
+
+/* 组件库内的分段切换器：组件/容器 */
+.sub-switch {
+  position: relative;
+  display: flex;
+  margin-bottom: 10px;
+  padding: 3px;
+  background: #f0f1f5;
+  border-radius: 999px;
+}
+
+.sub-switch-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+  transition: transform 0.25s ease;
+}
+
+.sub-switch.right .sub-switch-thumb {
+  transform: translateX(100%);
+}
+
+.sub-switch-option {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  text-align: center;
+  padding: 6px 0;
+  font-size: 14px;
+  color: #606266;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.25s ease;
+}
+
+.sub-switch-option.active {
+  color: #fff;
 }
 
 .library-content {
@@ -615,4 +713,30 @@ provide('formCtx', {
 .designer-canvas::-webkit-scrollbar-thumb:hover {
   background: #909399;
 }
+
+  .template-card {
+    margin-bottom: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    border: 1px solid #ebeef5;
+  }
+  .template-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+  }
+  .template-card :deep(.el-card__body) {
+    padding: 12px 14px;
+  }
+  .template-card-name {
+    font-size: 14px;
+    color: #303133;
+    font-weight: 500;
+  }
+  .template-card-desc {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
+  }
 </style>
