@@ -26,7 +26,7 @@
     type: string
     options: WidgetOptions
     category?: string
-    formItemFlag?: boolean
+    formItemFlag: boolean
     icon?: string
     children?: Widget[][]
   }

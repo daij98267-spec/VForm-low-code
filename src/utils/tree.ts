@@ -79,3 +79,20 @@ export function deleteColumnFormData(formData: Record<string, any>, column: Widg
         deleteWidgetFormData(formData,widget)
     }
 }
+// 收集整棵树上所有「叶子字段」的 name（容器不算）
+export function collectFieldNames(list:Widget[]):string[]{
+  const fieldNames:string[]=[]
+  for(const widget of list){
+    if(widget.formItemFlag===true){
+      fieldNames.push(widget.options.name)
+    }
+    else{
+      if(widget.children){
+        for(const column of widget.children){
+          fieldNames.push(...collectFieldNames(column))
+        }
+      }
+    }
+  }
+  return fieldNames
+}

@@ -33,9 +33,13 @@
                   <!--校验提示语提示，有规则才有提示语-->
                   <el-input v-if="onselectedWidget.options.validation" v-model="onselectedWidget.options.validationHint" placeholder="请输入校验提示语" />
                 </div>
-                <!--组件所依赖的其他组件-->
+                <!--组件所依赖的其他组件，显隐条件-->
                 <div>
-
+                  <el-select v-model="visibleField" placeholder="请选择依赖字段">
+                    <el-option label="无" value=""></el-option>
+                    <el-option v-for="item in collectFieldNames(formJson.widgetList)"  :key="item" :label="item" :value="item"></el-option>
+                  </el-select>
+                  <el-input v-if="visibleField" v-model="visibleValue" placeholder="触发值（依赖字段等于这个值才显示）" />
                 </div>
                 </div>
                 <!--容器组件特有的属性-->
@@ -78,10 +82,34 @@
 </template>
 
 <script lang="ts" setup>
-import {defineEmits} from 'vue'
+import {defineEmits,computed} from 'vue'
+import {collectFieldNames} from '../utils/tree.ts'
 
-defineProps<{ onselectedWidget:any, formJson: any }>()
-const emit = defineEmits(['clear-validate', 'remove-option', 'add-option'])
+const props=defineProps<{ onselectedWidget:any, formJson: any }>()
+const emit = defineEmits(['clear-validate', 'remove-option', 'add-option',])
+
+ const visibleField = computed({
+    get: () => props.onselectedWidget?.options?.visibleWhen?.field ?? '',
+    set: (field: string) => {
+      const w = props.onselectedWidget
+      if (!w) return
+      if (!field) {                    // 选了「无」→ 删掉整个条件
+        delete w.options.visibleWhen
+        return
+      }
+      if (!w.options.visibleWhen) w.options.visibleWhen = { field: '', value: '' }
+      w.options.visibleWhen.field = field
+    }
+  })
+  const visibleValue = computed({
+    get: () => props.onselectedWidget?.options?.visibleWhen?.value ?? '',
+    set: (value: any) => {
+      const w = props.onselectedWidget
+      if (!w) return
+      if (!w.options.visibleWhen) w.options.visibleWhen = { field: '', value: '' }
+      w.options.visibleWhen.value = value
+    }
+  })
 const clearValidate = () => {
     emit('clear-validate')
 }
