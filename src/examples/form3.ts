@@ -1,5 +1,5 @@
 // 报名登记表：演示栅格容器 + 手机号校验
-import { getDefaultFormConfig } from '../src/utils/util'
+import { getDefaultFormConfig } from '../utils/util'
 
 const widgetList = [
     {

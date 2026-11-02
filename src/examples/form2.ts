@@ -1,5 +1,5 @@
 //个人职业规划表
-import {getDefaultFormConfig} from '../src/utils/util'
+import {getDefaultFormConfig} from '../utils/util'
  const widgetList = [
     {
       id: 'input_1',
@@ -43,6 +43,7 @@ import {getDefaultFormConfig} from '../src/utils/util'
         placeholder: '请输入所教学科',
         defaultValue: '',
         visibleWhen: { field: 'career', value: '老师' },   // 只有当 career === '老师' 才显示
+        required: true,
       },
       category: 'field',
       formItemFlag: true,
@@ -61,6 +62,7 @@ import {getDefaultFormConfig} from '../src/utils/util'
           { label: 'Python', value: 'Python' },
           { label: 'JavaScript', value: 'JavaScript' },
         ],
+        required: false,
       },
       category: 'field',
       formItemFlag: true,
@@ -79,6 +81,7 @@ import {getDefaultFormConfig} from '../src/utils/util'
           { label: '外科', value: '外科' },
           { label: '儿科', value: '儿科' },
         ],
+        required: true,
       },
       category: 'field',
       formItemFlag: true,

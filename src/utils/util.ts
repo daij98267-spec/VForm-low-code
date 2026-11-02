@@ -1,5 +1,5 @@
 import type { Widget } from '../utils/type.ts'
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { FormValidators } from './validators.ts'
 
 export function generateId(prefix = ''): string {
@@ -115,3 +115,11 @@ export function isVisible(widget:Widget,formData: Record<string, any>):boolean{
     }
   }
 }
+export function useFieldClearOnHide(formData: Record<string, any>, widget: Widget) {
+    watch(
+      () => isVisible(widget, formData),
+      (visible) => {
+        if (!visible) delete formData[widget.options.name]
+      },
+      { flush: 'sync' }   // ← 关键，见下面解释
+    )}

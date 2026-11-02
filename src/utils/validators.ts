@@ -62,7 +62,7 @@ function age(rule: any, value: any, callback: any) {
         return
     }
     //正则表达式校验年龄格式，1-99岁
-    const reg=/^[1-9]\d?$|100$/
+    const reg=/^(?:[1-9]\d?|100)$/
     if (!reg.test(value)) {
         // rule.errorMsg 是我们在 getRules 里挂上去的自定义提示语，没配就用默认的
         callback(new Error(rule.errorMsg || '请输入1-99岁'))

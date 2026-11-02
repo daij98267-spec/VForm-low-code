@@ -52,6 +52,8 @@
               <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="redo">→</el-button>
             </div>
             <div class="toolbar-right">
+              <!--导出代码弹窗-->
+              <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="codeDialogRef.open()">导出代码</el-button>
               <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="exportJson">导出Json</el-button>
               <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="importJson">导入Json</el-button>
             </div>
@@ -61,7 +63,7 @@
          />
         </div>
         </el-main>
-        <el-aside width="300px" class="designer-aside">
+        <el-aside width="360px" class="designer-aside">
           <!--属性面板-->
           <PropertyPanel
            :onselectedWidget="onselectedWidget"
@@ -77,12 +79,19 @@
       <Renderer :formJson="formJson" :formData="formData" preview />
       <el-button type="primary" @click="previewVisible=false">关闭</el-button>
     </el-dialog>
+    <!--导出代码弹窗-->
+    <CodeDialog ref="codeDialogRef" :formJson="formJson" />
     <!--导出Json弹窗-->
     <el-dialog title="导出Json" v-model="exportJsonVisible" width="80%">
       <el-input v-model="formJsonStr" placeholder="请输入Json字符串" type="textarea" rows="20" readonly />
       <el-button type="primary" @click="exportJsonVisible=false">关闭</el-button>
       <el-button type="primary" @click="copyJson">复制Json</el-button>
     </el-dialog>
+    <!--提交表单弹窗-->
+  <el-dialog title="提交结果" v-model="submitVisible" width="80%">
+    <pre class="submit-result">{{ submitResult }}</pre>
+    <el-button type="primary" @click="submitVisible=false">关闭</el-button>
+  </el-dialog>
     <!--导入Json弹窗-->
     <el-dialog title="导入Json" v-model="importJsonVisible" width="80%">
       <el-input v-model="formJsonStr2" placeholder="请输入Json字符串" type="textarea" rows="20" />
@@ -95,7 +104,7 @@
 <script setup lang="ts">
 import Renderer from '../renderer/index.vue'
 import {basicFieldsLabel } from '../widgets/registry.ts'
-import form1 from '../../examples/form1.ts'
+import form1 from '../examples/form1.ts'
 import { ref,reactive,provide,computed } from 'vue'
 import {generateId,deepClone} from '../utils/util.ts'
 import type { Widget ,FieldOption} from '../utils/type.ts'
@@ -104,7 +113,8 @@ import { getDefaultFormConfig } from '../utils/util.ts'
 import draggable from 'vuedraggable'
 import { hasName,findParentArray,findOwner,deleteWidgetFormData,deleteColumnFormData } from '../utils/tree.ts'
 import PropertyPanel from '../designer/PropertyPanel.vue'
-import { templates } from '../../examples/templates.ts'
+import { templates } from '../examples/templates.ts'
+import CodeDialog from '../designer/codeDialog.vue'
 
 const onselectedWidgetId=ref<string|null>(null)//被选中组件的id
 const onselectedWidget=ref<Widget|null>(null)//被选中的组件
@@ -122,6 +132,9 @@ const formJsonStr2=ref<string>('')//导入的Json字符串
 const formJson = reactive<{ widgetList: Widget[]; formConfig: any }>(form1)
 const formData=reactive<Record<string, any>>({})
 const rendererRef=ref()//渲染器的引用
+const submitVisible=ref<boolean>(false)//提交表窗是否可见
+const submitResult=ref<string>('')//提交结果，Json字符串
+const codeDialogRef=ref()//导出代码弹窗的引用
 
 //加载模板
 const loadTemplate = (template: any) => {
@@ -239,11 +252,9 @@ const getForm=async()=>{
   try{
     await rendererRef.value.validateForm()
     const getData=await rendererRef.value.getFormData()
-    console.log(getData)
-    console.log(formData)
-    console.log(getData)
-    console.log(formData)
-  }catch(error){
+    submitVisible.value=true
+    submitResult.value=JSON.stringify(getData, null, 2)
+   }catch(error){
     //加弹窗提示
     ElMessage.error({
       message: '请输入必填字段',

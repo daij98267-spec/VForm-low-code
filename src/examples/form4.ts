@@ -1,5 +1,5 @@
 // 用户偏好设置：演示选项卡容器 + switch/slider/checkbox 控件
-import { getDefaultFormConfig } from '../src/utils/util'
+import { getDefaultFormConfig } from '../utils/util'
 
 const widgetList = [
     {

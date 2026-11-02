@@ -10,9 +10,10 @@
 
 <script lang="ts" setup>
     //label是展示的，value是存在formData里的值6
-    import { useFieldDefault } from '../../utils/util.ts'
+    import { useFieldDefault, useFieldClearOnHide } from '../../utils/util.ts'
     const props = defineProps<{ widget: any, formData: any }>()//约定好需要的东西
     useFieldDefault(props.formData,props.widget)
+    useFieldClearOnHide(props.formData,props.widget)
 
 </script>
 

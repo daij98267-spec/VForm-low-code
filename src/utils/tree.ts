@@ -96,3 +96,17 @@ export function collectFieldNames(list:Widget[]):string[]{
   }
   return fieldNames
 }
+//收集所有叶子字段，返回 Widget 对象而不是 name
+  export function collectFields(list: Widget[]): Widget[] {
+      const fields: Widget[] = []
+      for (const widget of list) {
+          if (widget.formItemFlag === true) {
+              fields.push(widget)
+          } else if (widget.children) {
+              for (const column of widget.children) {
+                  fields.push(...collectFields(column))
+              }
+          }
+      }
+      return fields
+  }

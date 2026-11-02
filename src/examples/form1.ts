@@ -1,6 +1,6 @@
 //手写一份完整的表单，包含input、textarea、select用于测试啥的
 //加上容器嵌套
-import {getDefaultFormConfig} from '../src/utils/util'
+import {getDefaultFormConfig} from '../utils/util'
 
 const widgetList=[]
 widgetList.push({

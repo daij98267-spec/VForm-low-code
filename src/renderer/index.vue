@@ -64,7 +64,7 @@ const props = defineProps<{ formJson: any, formData: Record<string, any>,preview
 function getFormData(){
     return deepClone(props.formData)
 }
-//校验表单
+//校验表单的方法
 function validateForm(){
     return formRef.value.validate()
 }
