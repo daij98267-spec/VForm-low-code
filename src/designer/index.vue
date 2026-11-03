@@ -56,6 +56,7 @@
               <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="codeDialogRef.open()">导出代码</el-button>
               <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="exportJson">导出Json</el-button>
               <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="importJson">导入Json</el-button>
+              <el-button type="primary" class="toolbar-btn toolbar-btn-transparent" text @click="aiVisible = !aiVisible">智能助手</el-button>              
             </div>
           </div>
           <div class="renderer" @click="selectedEmpty">
@@ -71,6 +72,10 @@
            @clear-validate="clearValidate"
            @remove-option="removeOption"
            @add-option="addOption" />
+        </el-aside>
+        <!--智能助手弹窗-->
+        <el-aside v-if="aiVisible" width="320px" class="designer-aside" style="border-left: 1px solid #ebeef5;">
+          <ChatAI />
         </el-aside>
       </el-container>
     </div>
@@ -115,6 +120,7 @@ import { hasName,findParentArray,findOwner,deleteWidgetFormData,deleteColumnForm
 import PropertyPanel from '../designer/PropertyPanel.vue'
 import { templates } from '../examples/templates.ts'
 import CodeDialog from '../designer/codeDialog.vue'
+import ChatAI from '../designer/ChatAI.vue'
 
 const onselectedWidgetId=ref<string|null>(null)//被选中组件的id
 const onselectedWidget=ref<Widget|null>(null)//被选中的组件
@@ -135,6 +141,7 @@ const rendererRef=ref()//渲染器的引用
 const submitVisible=ref<boolean>(false)//提交表窗是否可见
 const submitResult=ref<string>('')//提交结果，Json字符串
 const codeDialogRef=ref()//导出代码弹窗的引用
+const aiVisible=ref<boolean>(false)//智能助手弹窗是否可见
 
 //加载模板
 const loadTemplate = (template: any) => {
@@ -462,6 +469,7 @@ const removeCol = (widget: any, index: number) => {
     widget.children.splice(index, 1)
   }
 }
+
 //提供方法，组件之间的通信
 provide('formCtx', {
     selectedWidget, removeWidget, copyWidget, moveUp, moveDown,
