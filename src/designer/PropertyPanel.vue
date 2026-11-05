@@ -55,7 +55,7 @@
                 <div v-if="onselectedWidget.type === 'tabs'">
                   <div class="prop-label section">Tab 标签</div>
                   <!--tab标签-->
-                  <div v-for="(item,index) in onselectedWidget.options.tabNames" :key="index">
+                  <div v-for="(_, index) in onselectedWidget.options.tabNames" :key="index">
                     <el-input v-model="onselectedWidget.options.tabNames[index]" placeholder="请输入tab标签" />
                   </div>
                 </div>

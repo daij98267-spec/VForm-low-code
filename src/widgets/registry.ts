@@ -25,25 +25,25 @@ import type { WidgetOptions, Widget } from '../utils/type.ts'
 export const basicFieldsLabel:  {formItemFlag: boolean;category?: string;children?:Widget[][]; type: string; options: Omit<WidgetOptions, 'name'> }[]= [
     {formItemFlag:true,type:'select',options:{placeholder:'请选择性别',defaultValue:'男',
         optionItems: [{ label: '男', value: '男' }, { label: '女', value: '女' }],
-        label:'下拉选择',required:true}},    
-    {formItemFlag:true,type:'textarea',options:{placeholder:'请输入描述',defaultValue:'',label:'文本域',required:true}},
-    {formItemFlag:true,type:'input',options:{placeholder:'请输入姓名',defaultValue:'张三',label:'输入框',required:true}},
+        label:'下拉选择',required:false}},    
+    {formItemFlag:true,type:'textarea',options:{placeholder:'请输入描述',defaultValue:'',label:'文本域',required:false}},
+    {formItemFlag:true,type:'input',options:{placeholder:'请输入姓名',defaultValue:'张三',label:'输入框',required:false}},
     {formItemFlag:true,type:'radio',options:{placeholder:'请选择性别',defaultValue:'男',
         optionItems: [{ label: '男', value: '男' }, { label: '女', value: '女' }],
-        label:'单选框',required:true}},
+        label:'单选框',required:false}},
     {formItemFlag:true,type:'checkbox',options:{placeholder:'请选择爱好',defaultValue:[],
         optionItems: [{ label: '篮球', value: '篮球' }, { label: '足球', value: '足球' }],
-        label:'复选框',required:true}},
-    {formItemFlag:true,type:'datepicker',options:{placeholder:'请选择日期',defaultValue:'2026-6-29',label:'日期选择器',required:true}},
+        label:'复选框',required:false}},
+    {formItemFlag:true,type:'datepicker',options:{placeholder:'请选择日期',defaultValue:'2026-6-29',label:'日期选择器',required:false}},
     {formItemFlag:true,type:'slider',options:{label:'滑动选择器',defaultValue:50,sliderItems:{
         min:0,
         max:100,
         step:1,
-    },required:true}},
+    },required:false}},
     {formItemFlag:true,type:'switch',options:{label:'开关',defaultValue:true,switchItems:{
         activeValue:true,
         inactiveValue:false
-    },required:true}},
+    },required:false}},
     { type: 'grid', options: { label: '栅格容器' }, formItemFlag: false, category: 'container', children: [[],[]] },
     { type:'tabs',options:{label:'选项卡',tabNames:['tab1','tab2']},formItemFlag:false,category:'container',children:[[],[]]}
 ]

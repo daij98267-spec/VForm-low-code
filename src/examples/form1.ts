@@ -10,7 +10,7 @@ widgetList.push({
     label:'姓名',
     name:'name',
     placeholder:'请输入姓名',
-    required:true,
+    required:false,
     defaultValue:''
     },
     category:'field',
@@ -23,7 +23,7 @@ widgetList.push({
     label:'描述',//给人看
     name:'description',//给机器看
     placeholder:'请输入描述',
-    required:true,
+    required:false,
     defaultValue:''
 },
     category:'field',
@@ -44,7 +44,7 @@ widgetList.push({
         { label: '男', value: '男' },
         { label: '女', value: '女' }
       ],
-      required:true
+      required:false
     }
 },
 {
@@ -65,7 +65,7 @@ widgetList.push({
         label:'姓名',
         name:'name_1',
         placeholder:'请输入姓名',
-        required:true,
+        required:false,
         defaultValue:''
         },
         category:'field',
@@ -78,7 +78,7 @@ widgetList.push({
         label:'描述',//给人看
         name:'description_1',//给机器看
         placeholder:'请输入描述',
-        required:true,
+        required:false,
         defaultValue:''
         },
         category:'field',
@@ -99,7 +99,7 @@ widgetList.push({
           { label: '男', value: '男' },
           { label: '女', value: '女' }
         ],
-        required:true
+        required:false
         },
         category:'field',
         formItemFlag:true,
@@ -111,7 +111,7 @@ widgetList.push({
         label:'手机号',
         name:'phone_1',
         placeholder:'请输入手机号',
-        required:true,
+        required:false,
         defaultValue:'',
         validation:'mobilePhone',
         validationHint:'请输入正确的手机号'

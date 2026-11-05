@@ -129,6 +129,7 @@ import CodeDialog from '../designer/codeDialog.vue'
 import ChatAI from '../designer/ChatAI.vue'
 import MyForms from '../forms/MyForms.vue'
 import { saveForm,submitForm } from '../forms/api.ts'
+import { nextTick } from 'vue'
 
 const onselectedWidgetId=ref<string|null>(null)//被选中组件的id
 const onselectedWidget=ref<Widget|null>(null)//被选中的组件
@@ -309,7 +310,8 @@ const importJson=()=>{
   importJsonVisible.value=true
 }
 //导入Json提交
-const importJsonSubmit=()=>{
+const importJsonSubmit=async()=>{
+  performance.mark('import-start')
   //解析Json字符串
   try {
     const json = JSON.parse(formJsonStr2.value)
@@ -320,9 +322,21 @@ const importJsonSubmit=()=>{
       deleteColumnFormData(formData,formJson.widgetList)
       formJson.widgetList = json.widgetList
       formJson.formConfig = json.formConfig
+
       //导入新Json后，属性面板指向的当前组件要清空为null
       onselectedWidget.value=null
       onselectedWidgetId.value=null
+      importJsonVisible.value=false
+      await nextTick() 
+      performance.mark('render-end')    
+
+      performance.measure('import-to-render', 'import-start', 'render-end') 
+      const m = performance.getEntriesByName('import-to-render', 'measure').pop()
+      console.log('导入→渲染耗时', m?.duration.toFixed(2), 'ms')
+      ElMessage.success({
+        message: '导入Json成功',
+        type: 'success'
+      })
     }
   } catch (error) {
     //加弹窗提示，表单不关
@@ -330,8 +344,8 @@ const importJsonSubmit=()=>{
       message: '导入Json失败',
       type: 'error'
     })
+    importJsonVisible.value=false
     }
-  importJsonVisible.value=true
 }
 //重置表单
 const resetForm =()=>{

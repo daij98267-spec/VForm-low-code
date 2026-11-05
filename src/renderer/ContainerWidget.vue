@@ -28,8 +28,8 @@
                 :label="child.options.label"
                 :prop="child.options.name"
                 :rules="getRules(child)"
-                :class="{ highlight: child.id === selectedWidgetId && !preview }"
-                @click.stop="selectedWidget(child)&&!preview"
+                :class="{ 'highlight': !preview&&child.id === selectedWidgetId }"
+                @click.stop="!preview&&selectedWidget(child)"
               >
                 <component :is="basicFields[child.type]" :widget="child" :formData="formData" />
                 <br>
@@ -66,8 +66,8 @@
               :label="child.options.label"
               :prop="child.options.name"
               :rules="getRules(child)"
-              :class="{ highlight: child.id === selectedWidgetId && !preview }"
-              @click.stop="selectedWidget(child)&&!preview"
+              :class="{ 'highlight': !preview&&child.id === selectedWidgetId }"
+              @click.stop="!preview&&selectedWidget(child)"
             >
               <component :is="basicFields[child.type]" :widget="child" :formData="formData" />
               <br>

@@ -16,10 +16,10 @@
         <ContainerWidget v-if="widget.formItemFlag === false" :widget="widget" :formData="formData"
          />
         <el-form-item v-else-if="isVisible(widget,formData)" :label="widget.options.label"  
-                      :class="{'highlight':widget.id===selectedWidgetId&&!preview}"
+                      :class="{'highlight':!preview&&widget.id===selectedWidgetId}"
                       :prop="widget.options.name"
                       :rules="getRules(widget)"
-                      @click.stop="selectedWidget(widget)&&!preview"
+                      @click.stop="!preview&&selectedWidget(widget)"
                       >
                       <!--prop 是表单的属性，用于绑定表单数据的属性-->
             <component :is="basicFields[widget.type]"
