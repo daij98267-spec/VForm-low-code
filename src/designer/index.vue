@@ -49,6 +49,7 @@
         <el-main class="designer-canvas">
           <div class="canvas-toolbar">
             <div class="toolbar-left">
+              <el-button type="primary" class="toolbar-btn" @click="saveMyForm">保存</el-button>
               <el-button type="success" class="toolbar-btn" @click="getForm">提交</el-button>
               <el-button type="info" class="toolbar-btn" @click="previewForm">预览</el-button>
               <el-button type="danger" class="toolbar-btn" @click="resetForm">重置表单</el-button>
@@ -127,6 +128,7 @@ import { templates } from '../examples/templates.ts'
 import CodeDialog from '../designer/codeDialog.vue'
 import ChatAI from '../designer/ChatAI.vue'
 import MyForms from '../forms/MyForms.vue'
+import { saveForm,submitForm } from '../forms/api.ts'
 
 const onselectedWidgetId=ref<string|null>(null)//被选中组件的id
 const onselectedWidget=ref<Widget|null>(null)//被选中的组件
@@ -148,6 +150,7 @@ const submitVisible=ref<boolean>(false)//提交表窗是否可见
 const submitResult=ref<string>('')//提交结果，Json字符串
 const codeDialogRef=ref()//导出代码弹窗的引用
 const aiVisible=ref<boolean>(false)//智能助手弹窗是否可见
+const currentId=ref<string>('')//当前的表单id
 
 //加载模板
 const loadTemplate = (template: any) => {
@@ -261,12 +264,14 @@ const addOption=()=>{
   onselectedWidget.value.options.optionItems.push({label:'',value:''})
 }
 const getForm=async()=>{
-  //校验表单
+  //校验表单是否完整
   try{
     await rendererRef.value.validateForm()
     const getData=await rendererRef.value.getFormData()
     submitVisible.value=true
     submitResult.value=JSON.stringify(getData, null, 2)
+    //调接口放到submission表里
+    await submitForm(currentId.value,getData)
    }catch(error){
     //加弹窗提示
     ElMessage.error({
@@ -475,7 +480,7 @@ const removeCol = (widget: any, index: number) => {
     widget.children.splice(index, 1)
   }
 }
-const loadForm=(MyformJson:any)=>{
+const loadForm=(MyformJson:any,id:string)=>{
     try {
         if (!MyformJson || !MyformJson.widgetList) {   // detail 查不到会返回 null
             ElMessage.error('该表单数据为空或不存在')
@@ -483,6 +488,7 @@ const loadForm=(MyformJson:any)=>{
         }
         saveHistory()                                              // 存档，支持撤销
         Object.keys(formData).forEach(key => delete formData[key]) // 清空旧表单数据
+        currentId.value=id//更新当前id
         formJson.widgetList = deepClone(MyformJson.widgetList)     // 注意：不隔层！
         if (MyformJson.formConfig) formJson.formConfig = deepClone(MyformJson.formConfig)
         onselectedWidget.value = null                              // 清空选中
@@ -491,6 +497,17 @@ const loadForm=(MyformJson:any)=>{
     } catch (error) {
         ElMessage.error('加载表单失败')
     }
+}
+//保存表单
+const saveMyForm=async()=>{
+  //拿到当前id
+  await saveForm(currentId.value,JSON.stringify(formJson))
+  if(currentId.value){
+    ElMessage.success('表单已保存')
+  }
+  else{
+    ElMessage.error('保存失败')
+  }
 }
 //提供方法，组件之间的通信
 provide('formCtx', {

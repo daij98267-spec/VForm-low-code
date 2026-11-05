@@ -21,6 +21,7 @@
                     {{ f.title }}
                 </div>
                 <div class="form-card-desc">{{ f.created_at }}</div>
+                <el-button type="primary" size="small" @click="viewSubmissions=true,loadSubmissions(f.id)">查看提交记录</el-button>
             </el-card>
         </div>
 
@@ -28,36 +29,64 @@
         <div class="form-empty" v-if="!forms.length">
             还没有保存过表单<br />保存后就会出现在这里
         </div>
+        <!-- 新建表单弹窗 -->
         <el-dialog title="新建表单" v-model="dialogVisible" width="30%">
             <el-input v-model="formTitle" placeholder="请输入表单标题" />
             <el-button type="primary" @click="create">新建</el-button>
+        </el-dialog>
+        <!--查看提交记录弹窗-->
+        <el-dialog title="查看提交记录" v-model="viewSubmissions" width="80%">
+            <el-table :data="submissions" style="width: 100%">
+                <el-table-column prop="id" label="提交ID" width="180" />
+                <el-table-column prop="data_json" label="提交数据" width="300" />
+                <el-table-column prop="created_at" label="提交时间" width="200" />
+            </el-table>
+            <el-button type="primary" @click="viewSubmissions=false">关闭</el-button>
         </el-dialog>
     </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { getForms } from './api.ts'
-import {getFormDetail,createForm} from './api.ts'
+import {getFormDetail,createForm,getSubmissions} from './api.ts'
 
 const forms = ref<any>([])
 const dialogVisible = ref(false)
 const formTitle = ref('')
+const viewSubmissions = ref(false)
+const submissions = ref<any>([])
 //get请求拿到forms
 const emit = defineEmits(['loadForm'])
-onMounted(async () => { forms.value = await getForms() })
+
+const refresh = async () => { forms.value = await getForms() }
+onMounted(async () => { await refresh() })
 
 //加载表单
 const loadForm=async(id:string)=>{
     const MyformJson=await getFormDetail(id)
     console.log(MyformJson)
-    emit('loadForm', MyformJson)
+    emit('loadForm', MyformJson,id)
 }
 
 //新建表单
 const create=async()=>{
     const id=await createForm(formTitle.value)
     console.log(id)
+    if(id){
+        ElMessage.success('新建成功')
+        dialogVisible.value=false
+        formTitle.value=''
+        await refresh()
+    }
+    else{
+        ElMessage.error('新建失败')
+    }
+}
+//查看提交记录
+const loadSubmissions=async(id:string)=>{
+    submissions.value=await getSubmissions(id)
 }
 
 </script>
