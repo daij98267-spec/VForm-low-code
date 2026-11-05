@@ -36,18 +36,22 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, reactive,onMounted } from 'vue'
+import { ref, nextTick, reactive,onMounted,defineProps } from 'vue'
 import { ElMessage } from 'element-plus'
-
+import type { Widget } from '../utils/type.ts'
+import { collectFields } from '../utils/tree.ts'
 interface ChatMessage {
-    role: 'user' | 'ai'
+    role: 'user' | 'assistant'
     content: string
 }
 
 const aiPrompt = ref<string>('')
 const aiLoading = ref<boolean>(false)
-const messages = ref<ChatMessage[]>([])
+const messages = ref<ChatMessage[]>([])//消息列表
 const listRef = ref<HTMLElement>()
+
+const props=defineProps<{ formJson: { widgetList: Widget[]; formConfig: any } }>()
+
 
 // 滚动到最底部
 const scrollToBottom = async () => {
@@ -57,6 +61,15 @@ const scrollToBottom = async () => {
 }
 //发送消息
 const sendMessage = async () => {
+    //.map只要六个字段
+    const fieldsSimple=collectFields(props.formJson.widgetList).map(fields=>({
+    name:fields.options.name,
+    type:fields.type,
+    label:fields.options.label,
+    placeholder:fields.options.placeholder,
+    required:fields.options.required,
+    validation:fields.options.validation
+}))
     const text = aiPrompt.value.trim()//用户的提示词去掉空格
     if (!text) {
         ElMessage.warning('请先输入描述')
@@ -67,7 +80,7 @@ const sendMessage = async () => {
     aiPrompt.value = ''
     aiLoading.value = true
 
-    const aiMsg = reactive({ role: 'ai' as const, content: '' })
+    const aiMsg = reactive({ role: 'assistant' as const, content: '' })
     messages.value.push(aiMsg)
     scrollToBottom()
 
@@ -77,7 +90,7 @@ const sendMessage = async () => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ message: text })
+            body: JSON.stringify({ messages: messages.value, fields:fieldsSimple })//把所有的对话都推送给后端
         })
 
         const reader = resp.body!.getReader()              // ② 开始拉流

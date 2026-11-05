@@ -9,6 +9,7 @@
             <div class="library-switch">
               <div class="library-tab" :class="{ active: activeTab === 'widgets' }" @click="activeTab = 'widgets'">组件库</div>
               <div class="library-tab" :class="{ active: activeTab === 'templates' }" @click="activeTab = 'templates'">表单模板</div>
+              <div class="library-tab" :class="{ active: activeTab === 'forms' }" @click="activeTab = 'forms'">我的表单</div>
             </div>
             <!--组件库内容-->
             <div v-show="activeTab === 'widgets'" class="library-content">
@@ -38,6 +39,10 @@
                   <div class="template-card-desc">{{ t.description }}</div>
                 </el-card>  
             </div>
+            <!--我的表单-->
+              <div v-show="activeTab === 'forms'" class="library-content">
+                <MyForms @loadForm="loadForm"/>
+              </div>
           </div>
         </el-aside>
         <!--渲染器，渲染器给组件库落脚点-->
@@ -75,7 +80,7 @@
         </el-aside>
         <!--智能助手弹窗-->
         <el-aside v-if="aiVisible" width="320px" class="designer-aside" style="border-left: 1px solid #ebeef5;">
-          <ChatAI />
+          <ChatAI :formJson="formJson" />
         </el-aside>
       </el-container>
     </div>
@@ -121,13 +126,14 @@ import PropertyPanel from '../designer/PropertyPanel.vue'
 import { templates } from '../examples/templates.ts'
 import CodeDialog from '../designer/codeDialog.vue'
 import ChatAI from '../designer/ChatAI.vue'
+import MyForms from '../forms/MyForms.vue'
 
 const onselectedWidgetId=ref<string|null>(null)//被选中组件的id
 const onselectedWidget=ref<Widget|null>(null)//被选中的组件
 const previewVisible=ref<boolean>(false)//预览表窗是否可见
 const exportJsonVisible=ref<boolean>(false)//导出Json弹窗是否可见
 const importJsonVisible=ref<boolean>(false)//导入Json弹窗是否可见
-const activeTab=ref<string>('widgets')//左侧面板激活的标签：组件库/表单模板
+const activeTab=ref<string>('widgets')//左侧面板激活的标签：组件库/表单模板/我的表单
 const libraryTab=ref<string>('fields')//组件库里激活的子标签：组件/容器
 //按子标签过滤组件库：组件显示formItemFlag为true的字段，容器显示formItemFlag为false的容器
 const libraryWidgets=computed(()=>
@@ -469,7 +475,23 @@ const removeCol = (widget: any, index: number) => {
     widget.children.splice(index, 1)
   }
 }
-
+const loadForm=(MyformJson:any)=>{
+    try {
+        if (!MyformJson || !MyformJson.widgetList) {   // detail 查不到会返回 null
+            ElMessage.error('该表单数据为空或不存在')
+            return
+        }
+        saveHistory()                                              // 存档，支持撤销
+        Object.keys(formData).forEach(key => delete formData[key]) // 清空旧表单数据
+        formJson.widgetList = deepClone(MyformJson.widgetList)     // 注意：不隔层！
+        if (MyformJson.formConfig) formJson.formConfig = deepClone(MyformJson.formConfig)
+        onselectedWidget.value = null                              // 清空选中
+        onselectedWidgetId.value = null
+        ElMessage.success('表单已载入')
+    } catch (error) {
+        ElMessage.error('加载表单失败')
+    }
+}
 //提供方法，组件之间的通信
 provide('formCtx', {
     selectedWidget, removeWidget, copyWidget, moveUp, moveDown,
