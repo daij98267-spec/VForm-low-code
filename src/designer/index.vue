@@ -24,7 +24,8 @@
                 item-key="type"
                 :group="{ name: 'widgets', pull: 'clone', put: false }"
                 :sort="false"
-                :clone="cloneWidget">
+                :clone="cloneWidget"
+                @start="onDragStart" @end="onDragEnd">
         <template #item="{ element: widget }">
           <el-card class="widget-card" shadow="hover" @click="addWidget(widget.type)">
             <span class="widget-card-label">{{ widget.options.label }}</span>
@@ -152,9 +153,9 @@ const submitResult=ref<string>('')//提交结果，Json字符串
 const codeDialogRef=ref()//导出代码弹窗的引用
 const aiVisible=ref<boolean>(false)//智能助手弹窗是否可见
 const currentId=ref<string>('')//当前的表单id
-const { execute, addWidgetCommand, removeWidgetCommand,undo,redo,
+const { execute, addWidgetCommand, removeWidgetCommand,undo,redo,replaceFormCommand,
   moveWidgetCommand, addOptionCommand, removeOptionCommand,addColCommand,removeColCommand,
-  replaceFormCommand } = useHistory(formJson, formData)
+  replaceStructureCommand,record } = useHistory(formJson, formData)
 
 //加载模板
  const loadTemplate = (template: any) => {
@@ -341,6 +342,24 @@ const cloneWidget=(widget:Widget)=>{
     children:deepClone(widget.children),type:widget.type,id,options:{...deepClone(widget.options),name}}
 }
 
+const snapshotStructure = (list: Widget[]): Widget[] =>
+list.map(w => w.children ? { ...w, children: w.children.map(col => snapshotStructure(col)) } : w)
+
+let dragBefore: Widget[] | null = null
+let dragChanged = false
+const onDragStart = () => {
+  dragBefore = snapshotStructure(formJson.widgetList)
+  dragChanged = false
+}
+const onDragChange = () => { dragChanged = true }
+const onDragEnd = () => {
+  if (dragBefore && dragChanged) {
+    record(replaceStructureCommand(dragBefore, snapshotStructure(formJson.widgetList)))
+  }
+  dragBefore = null
+  dragChanged = false
+}
+
 //清空表单验证
 const clearValidate=()=>{
   rendererRef.value.clearValidate(onselectedWidget.value?.options.name)
@@ -421,6 +440,7 @@ const saveMyForm=async()=>{
 provide('formCtx', {
     selectedWidget, removeWidget, copyWidget, moveUp, moveDown,
     selectParentWidget, addCol, removeCol, recordWidgets,
+    onDragStart, onDragChange, onDragEnd,
     selectedWidgetId: computed(() => onselectedWidgetId.value),
 })
 </script>

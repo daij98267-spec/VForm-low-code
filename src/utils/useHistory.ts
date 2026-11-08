@@ -177,5 +177,15 @@ export function useHistory(
       }
     }
   }
-    return { execute, undo, redo, removeWidgetCommand,addWidgetCommand,replaceFormCommand,addColCommand,removeColCommand,addOptionCommand,removeOptionCommand,moveWidgetCommand}
+  //浅快照
+   function replaceStructureCommand(before: Widget[], after: Widget[]): Command {
+    return {
+      do()   { formJson.widgetList = after },
+      undo() { formJson.widgetList = before }
+    }
+  }
+    return { execute, undo, redo, removeWidgetCommand,addWidgetCommand,replaceFormCommand,
+      addColCommand,removeColCommand,addOptionCommand,removeOptionCommand,moveWidgetCommand,
+      replaceStructureCommand,record
+    }
 }

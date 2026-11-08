@@ -9,7 +9,7 @@
                        >
     <!--画布只接收，不能往外拖，与组件库共用一个group-->
     <draggable v-model="widgetList" item-key="id" :group="{ name:'widgets', pull:true, put:true }"
-    >
+     @start="onDragStart" @change="onDragChange" @end="onDragEnd">
         <template #item="{element:widget}">
             <div>
             <!--如果是容器组件-->
@@ -58,7 +58,7 @@ import LazyField from './LazyField.vue'
 //拿数据inject
 const {
     selectedWidget, removeWidget, copyWidget, moveUp, moveDown,
-    selectedWidgetId,recordWidgets
+    selectedWidgetId,recordWidgets,onDragStart, onDragChange, onDragEnd
 } = inject<any>('formCtx')!
 
 const props = defineProps<{ formJson: any, formData: Record<string, any>,preview?:boolean }>()//约定好需要的东西

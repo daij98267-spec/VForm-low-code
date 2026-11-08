@@ -13,6 +13,7 @@
           item-key="id"
           :group="{ name: 'widgets', pull: true, put: true }"
           class="col-draggable"
+          @start="onDragStart" @change="onDragChange" @end="onDragEnd"
         >
           <template #item="{ element: child }">
             <div>
@@ -57,7 +58,8 @@
       :label="widget.options.tabNames?.[i]"
       :name="i"
     >
-      <draggable :list="col" item-key="id" :group="{ name: 'widgets', pull: true, put: true }" class="col-draggable">
+      <draggable :list="col" item-key="id" :group="{ name: 'widgets', pull: true, put: true }" class="col-draggable"
+      @start="onDragStart" @change="onDragChange" @end="onDragEnd">
         <template #item="{ element: child }">
           <div>
             <ContainerWidget v-if="child.formItemFlag === false" :widget="child" :formData="formData" />
@@ -99,6 +101,7 @@
  const {
     selectedWidget, removeWidget, copyWidget, moveUp, moveDown,
     selectedWidgetId,selectParentWidget,addCol,removeCol,
+    onDragStart, onDragChange, onDragEnd,
   } = inject<any>('formCtx')!
   const preview = inject('preview')
   const props = defineProps<{
