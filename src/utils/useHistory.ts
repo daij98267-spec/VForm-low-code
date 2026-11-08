@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import type { Widget,FieldOption } from './type.ts'
 import { deepClone } from './util.ts'
-import { findParentArray, captureWidgetData, deleteWidgetFormData,collectFieldNames,captureColumnData,deleteColumnFormData } from './tree.ts'
+import { findParentArray, captureWidgetData, deleteWidgetFormData,captureColumnData,deleteColumnFormData } from './tree.ts'
 
 interface Command {
     do(): void//执行操作
