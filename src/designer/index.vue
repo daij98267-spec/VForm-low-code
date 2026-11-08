@@ -122,14 +122,14 @@ import type { Widget ,FieldOption} from '../utils/type.ts'
 import { ElMessage,ElMessageBox } from 'element-plus'
 import { getDefaultFormConfig } from '../utils/util.ts'
 import draggable from 'vuedraggable'
-import { hasName,findParentArray,findOwner,deleteWidgetFormData,deleteColumnFormData } from '../utils/tree.ts'
+import { hasName,findParentArray,findOwner } from '../utils/tree.ts'
 import PropertyPanel from '../designer/PropertyPanel.vue'
 import { templates } from '../examples/templates.ts'
 import CodeDialog from '../designer/codeDialog.vue'
 import ChatAI from '../designer/ChatAI.vue'
 import MyForms from '../forms/MyForms.vue'
 import { saveForm,submitForm } from '../forms/api.ts'
-import { nextTick } from 'vue'
+import { useHistory } from '../utils/useHistory.ts'
 
 const onselectedWidgetId=ref<string|null>(null)//被选中组件的id
 const onselectedWidget=ref<Widget|null>(null)//被选中的组件
@@ -152,81 +152,53 @@ const submitResult=ref<string>('')//提交结果，Json字符串
 const codeDialogRef=ref()//导出代码弹窗的引用
 const aiVisible=ref<boolean>(false)//智能助手弹窗是否可见
 const currentId=ref<string>('')//当前的表单id
+const { execute, addWidgetCommand, removeWidgetCommand,undo,redo,
+  moveWidgetCommand, addOptionCommand, removeOptionCommand,addColCommand,removeColCommand,
+  replaceFormCommand } = useHistory(formJson, formData)
 
 //加载模板
-const loadTemplate = (template: any) => {
-    saveHistory()                                              // 先存档，才能撤销
-    Object.keys(formData).forEach(key => delete formData[key]) // 清空旧数据
-    formJson.widgetList = deepClone(template.formJson.widgetList)   // 必须 deepClone！
-    formJson.formConfig = deepClone(template.formJson.formConfig)   // 必须 deepClone！
-    onselectedWidget.value = null                              // 清空选中
+ const loadTemplate = (template: any) => {
+    execute(replaceFormCommand(
+      deepClone(template.formJson.widgetList),
+      deepClone(template.formJson.formConfig)
+    ))
+    onselectedWidget.value = null
     onselectedWidgetId.value = null
-}
+  }
 
 //删除组件
-const removeWidget=(widget:Widget|null)=>{
-    if(onselectedWidget.value?.id===widget?.id){//如果选中的组件是删除的组件，那么选中的组件就为空
-        onselectedWidget.value=null
-        onselectedWidgetId.value=null
+ const removeWidget = (widget: Widget | null) => {
+    if (!widget) return
+    if (onselectedWidget.value?.id === widget.id) {
+      onselectedWidget.value = null
+      onselectedWidgetId.value = null
     }
-    saveHistory()
-    //删除组件
-    if(!widget){return}
-    const parentArr = findParentArray(formJson.widgetList, widget)
-    if(!parentArr){return}
-    //删除组件对应的formData的值
-    deleteWidgetFormData(formData,widget)
-    parentArr.splice(parentArr.indexOf(widget),1)
+    execute(removeWidgetCommand(widget))
   }
 //复制组件
-const copyWidget=(widget:Widget|null)=>{
-  if(!widget){return}
-  saveHistory()
-  //在这个组件的下面再复制一份组件
-  let id=generateId()
-  //不是追加到末尾，而是插入到当前组件的下面
-  let copy=deepClone(widget)
-  copy.id=id
-  copy.options.name=getNextName(widget.type)
-  console.log(copy.options.name)
-  const parentArr=findParentArray(formJson.widgetList, widget)
-  if(!parentArr){return}
-  parentArr.splice(parentArr.indexOf(widget)+1,0,copy)
+const copyWidget = (widget: Widget | null) => {
+  if (!widget) return
+  const copy = deepClone(widget)
+  copy.id = generateId()
+  copy.options.name = getNextName(widget.type)
+  const parentArr = findParentArray(formJson.widgetList, widget)
+  if (!parentArr) return
+  execute(addWidgetCommand(copy, parentArr, parentArr.indexOf(widget) + 1))
 }
 //上移组件
-const moveUp=(widget:Widget|null)=>{
-  if(!widget){return}
-  const parentArr=findParentArray(formJson.widgetList, widget)
-  if(!parentArr){return}
-  //如果是第一个组件，那么就不上移
-  if(parentArr.indexOf(widget)===0){return}
-  //如果不是第一个组件，那么就上移
-  else{
-    saveHistory()
-    const i = parentArr.indexOf(widget)
-  // 上移：交换 i 和 i-1
-  const tmp = parentArr[i]
-  parentArr[i] = parentArr[i-1]
-  parentArr[i-1] = tmp  
+ const moveUp = (widget: Widget | null) => {
+    if (!widget) return
+    const parentArr = findParentArray(formJson.widgetList, widget)
+    if (!parentArr || parentArr.indexOf(widget) === 0) return
+    execute(moveWidgetCommand(widget, parentArr, -1))
   }
-}
 //下移组件
-const moveDown=(widget:Widget|null)=>{
-  if(!widget){return}
-  const parentArr=findParentArray(formJson.widgetList, widget)
-  if(!parentArr){return}
-  //如果是最后一个组件，那么就不下移
-  if(parentArr.indexOf(widget)===parentArr.length-1){return}
-  //如果不是最后一个组件，那么就下移
-  else{
-    saveHistory()
-    const i = parentArr.indexOf(widget)
-  // 下移：交换 i 和 i+1
-  const tmp = parentArr[i]
-  parentArr[i] = parentArr[i+1]
-  parentArr[i+1] = tmp  
+ const moveDown = (widget: Widget | null) => {
+    if (!widget) return
+    const parentArr = findParentArray(formJson.widgetList, widget)
+    if (!parentArr || parentArr.indexOf(widget) === parentArr.length - 1) return
+    execute(moveWidgetCommand(widget, parentArr, 1))
   }
-}
 //选中父组件
 const selectParentWidget=(widget:Widget|null)=>{
   if(!widget){return}
@@ -249,21 +221,17 @@ const selectedWidget=(widget:Widget|null)=>{
     onselectedWidgetId.value=widget?.id||null
 }
 //删除选项
-const removeOption=(item:FieldOption|null)=>{
-  if(!onselectedWidget.value?.options.optionItems){
-    return
+ const removeOption = (item: FieldOption | null) => {
+    const optionItems = onselectedWidget.value?.options.optionItems
+    if (!optionItems || !item) return
+    execute(removeOptionCommand(optionItems, item))
   }
-  saveHistory()
-  onselectedWidget.value.options.optionItems=onselectedWidget.value.options.optionItems.filter(opt=>opt!==item)||[]
-}
 //新增选项
-const addOption=()=>{
-  if(!onselectedWidget.value?.options.optionItems){
-    return
+const addOption = () => {
+    const optionItems = onselectedWidget.value?.options.optionItems
+    if (!optionItems) return
+    execute(addOptionCommand(optionItems))
   }
-  saveHistory()
-  onselectedWidget.value.options.optionItems.push({label:'',value:''})
-}
 const getForm=async()=>{
   //校验表单是否完整
   try{
@@ -283,15 +251,37 @@ const getForm=async()=>{
   }
   }
 //点击组件库，把组件库中的组件追加到formJson里
-const addWidget=(type:string)=>{
-  saveHistory()
-  const widget=basicFieldsLabel.find(widget=>widget.type===type)
-  let id=generateId()
-  let name=getNextName(type)
-  if(!widget){return}
-  formJson.widgetList.push({formItemFlag:widget.formItemFlag,category:widget.category,
-  children:deepClone(widget.children),type:widget.type,id,options:{...deepClone(widget.options),name}})
-}
+ const addWidget = (type: string) => {
+    performance.mark('addWidget-start')
+    performance.mark('collectField-start')
+    const template = basicFieldsLabel.find(w => w.type === type)
+    performance.mark('collectField-end')
+    if (!template) return
+    performance.mark('defineWidget-start')
+    const widget: Widget = deepClone(template)   // 一次深拷，options/children/formItemFlag 全带走
+    widget.id = generateId()                     // 注入唯一 id
+    widget.options.name = getNextName(type)      // 注入唯一 name
+    performance.mark('defineWidget-end')
+    performance.mark('saveHistory-start')
+    execute(addWidgetCommand(widget, formJson.widgetList, formJson.widgetList.length))
+    performance.mark('saveHistory-end')
+    performance.mark('addWidget-end')
+    const segments = [
+  ['addWidget总计', 'addWidget-start', 'addWidget-end'],
+  ['查找组件模板', 'collectField-start', 'collectField-end'],
+  ['构造widget(deepClone)', 'defineWidget-start', 'defineWidget-end'],
+  ['execute入栈', 'saveHistory-start', 'saveHistory-end'],
+] as const
+
+segments.forEach(([name, s, e]) => performance.measure(name, s, e))
+console.table(
+  performance.getEntriesByType('measure')
+    .filter(m => segments.some(([n]) => n === m.name))
+    .map(m => ({ 阶段: m.name, 耗时ms: m.duration.toFixed(3) }))
+)
+segments.forEach(([, s, e]) => { performance.clearMarks(s); performance.clearMarks(e) })
+segments.forEach(([n]) => performance.clearMeasures(n))
+  }
 //预览表单
 const previewForm=()=>{
   previewVisible.value=true
@@ -310,43 +300,21 @@ const importJson=()=>{
   importJsonVisible.value=true
 }
 //导入Json提交
-const importJsonSubmit=async()=>{
-  performance.mark('import-start')
-  //解析Json字符串
-  try {
-    const json = JSON.parse(formJsonStr2.value)
-    //判断是否是Json字符串，是否有widgetList和formConfig，widgetList是否是数组，formConfig是否是对象
-    if (json.widgetList && json.formConfig && Array.isArray(json.widgetList) && typeof json.formConfig === 'object') {
-      saveHistory()
-      //删除旧的formData的值
-      deleteColumnFormData(formData,formJson.widgetList)
-      formJson.widgetList = json.widgetList
-      formJson.formConfig = json.formConfig
-
-      //导入新Json后，属性面板指向的当前组件要清空为null
-      onselectedWidget.value=null
-      onselectedWidgetId.value=null
+ const importJsonSubmit=async()=>{
+    try {
+      const json = JSON.parse(formJsonStr2.value)
+      if (json.widgetList && json.formConfig && Array.isArray(json.widgetList) && typeof json.formConfig === 'object') {
+        execute(replaceFormCommand(json.widgetList, json.formConfig))
+        onselectedWidget.value=null
+        onselectedWidgetId.value=null
+        importJsonVisible.value=false
+        ElMessage.success({ message: '导入Json成功', type: 'success' })
+      }
+    } catch (error) {
+      ElMessage.error({ message: '导入Json失败', type: 'error' })
       importJsonVisible.value=false
-      await nextTick() 
-      performance.mark('render-end')    
-
-      performance.measure('import-to-render', 'import-start', 'render-end') 
-      const m = performance.getEntriesByName('import-to-render', 'measure').pop()
-      console.log('导入→渲染耗时', m?.duration.toFixed(2), 'ms')
-      ElMessage.success({
-        message: '导入Json成功',
-        type: 'success'
-      })
     }
-  } catch (error) {
-    //加弹窗提示，表单不关
-    ElMessage.error({
-      message: '导入Json失败',
-      type: 'error'
-    })
-    importJsonVisible.value=false
-    }
-}
+  }
 //重置表单
 const resetForm =()=>{
   //清空formData，把formData里的数据清空
@@ -363,15 +331,12 @@ const resetForm =()=>{
 }
 //记录组件位置
 const recordWidgets=(val:Widget[])=>{
-  saveHistory()
   formJson.widgetList=val
 }
 //拖入定位
 const cloneWidget=(widget:Widget)=>{
-  console.log(widget)
   let id=generateId()
   let name=getNextName(widget.type)
-  saveHistory()
   return {formItemFlag:widget.formItemFlag,category:widget.category,
     children:deepClone(widget.children),type:widget.type,id,options:{...deepClone(widget.options),name}}
 }
@@ -390,128 +355,57 @@ const getNextName = (type: string) => {
   return type+i
 }
 
-const undoStack=ref<any[]>([])//里面存的是撤销栈
-const undoFormData=ref<any>([])//里面存的是撤销栈的formData
-//撤销与重做
-const undo=()=>{
-  if(undoStack.value.length===0){
-    return
-  }
-   redoStack.value.push(deepClone(formJson))
-   redoFormData.value.push(deepClone(formData))
-  Object.assign(formJson,undoStack.value.pop()||{})
-  Object.keys(formData).forEach(key => delete formData[key])
-  Object.assign(formData,undoFormData.value.pop()||{})
-}
-//存档
-const saveHistory=()=>{
-  //把当前的状态压入撤销栈
-  //每次操作前存档
-  undoStack.value.push(deepClone(formJson))
-  //存formData的值
-  undoFormData.value.push(deepClone(formData))
-  redoStack.value=[]
-  redoFormData.value=[]
-}
-//重做，重做本身也要存档放到栈里面
-const redoStack=ref<any[]>([])//里面存的是重做栈
-const redoFormData=ref<any>([])//里面存的是重做栈的formData
-const redo=()=>{
-  if(redoStack.value.length===0){
-    return
-  }
-  undoStack.value.push(deepClone(formJson))
-  undoFormData.value.push(deepClone(formData))
-  Object.assign(formJson,redoStack.value.pop()||{})
-  Object.keys(formData).forEach(key => delete formData[key])
-  Object.assign(formData,redoFormData.value.pop()||{})
-}
 //增加列
-const addCol=(widget:any,index:number)=>{
-  //如果当前列数小于4，就在右边插入一列
-  if(widget.children.length<4){
-    //如果是tabs容器，增加一个tab标签
-  if(widget.type==='tabs'){
-    //在此列后面增加一个tab标签，弹窗请输入tab标签
-    ElMessageBox.prompt('请输入tab标签', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'info'
-    }).then((tabName) => {
-      if(tabName.value){
-        saveHistory()
-        widget.options.tabNames.splice(index + 1, 0, tabName.value)
-        widget.children.splice(index + 1, 0, [])
+ const addCol = (widget: Widget, index: number) => {
+    if (widget.children!.length < 4) {
+      if (widget.type === 'tabs') {
+        ElMessageBox.prompt('请输入tab标签', '提示', {
+          confirmButtonText: '确定', cancelButtonText: '取消', type: 'info'
+        }).then((tabName) => {
+          if (tabName.value) execute(addColCommand(widget, index, tabName.value))
+        }).catch(() => {})
+      } else if (widget.type === 'grid') {
+        execute(addColCommand(widget, index))
       }
-    }).catch(() => {
-      //用户点击了取消，不执行任何操作
-    })
-  }
-  else if(widget.type==='grid'){
-    saveHistory()
-    widget.children.splice(index + 1, 0, [])
-  }
-  }
-}
-const removeCol = (widget: any, index: number) => {
-  //如果这个容器只有一行，不能删除
-  if(widget.children.length===1){
-    ElMessage.error({
-      message: '至少保留有一列',
-      type: 'error'
-    })
-    return
-  }
-  //如果这一列有组件，向用户确认是否删除
-  if(widget.children[index].length>0){
-    ElMessageBox.confirm('确认删除这一列吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }).then(() => {
-      //判断选中组件在不在这个删除的列里面
-      if(widget.children[index].find((item:Widget)=>item.id===onselectedWidget.value?.id)){
-        onselectedWidget.value=null
-        onselectedWidgetId.value=null
-      }
-      saveHistory()
-      //如果是tabs容器，删除一个tab标签
-    if(widget.type==='tabs'){
-      widget.options.tabNames.splice(index, 1)
     }
-      //删除组件对应的formData的值
-      deleteColumnFormData(formData,widget.children[index])
-      widget.children.splice(index, 1)
-    })
-  }else{
-    saveHistory()
-    //如果是tabs容器，删除一个tab标签
-    //删除组件对应的formData的值
-    deleteColumnFormData(formData,widget.children[index])
-    if(widget.type==='tabs'){
-      widget.options.tabNames.splice(index, 1)
-    }
-    widget.children.splice(index, 1)
   }
-}
-const loadForm=(MyformJson:any,id:string)=>{
-    try {
-        if (!MyformJson || !MyformJson.widgetList) {   // detail 查不到会返回 null
-            ElMessage.error('该表单数据为空或不存在')
-            return
+  const removeCol = (widget: Widget, index: number) => {
+    if (widget.children!.length === 1) {
+      ElMessage.error({ message: '至少保留有一列', type: 'error' })
+      return
+    }
+    if (widget.children![index].length > 0) {
+      ElMessageBox.confirm('确认删除这一列吗？', '提示', {
+        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+      }).then(() => {
+        if (widget.children![index].find((item) => item.id === onselectedWidget.value?.id)) {
+          onselectedWidget.value = null
+          onselectedWidgetId.value = null
         }
-        saveHistory()                                              // 存档，支持撤销
-        Object.keys(formData).forEach(key => delete formData[key]) // 清空旧表单数据
-        currentId.value=id//更新当前id
-        formJson.widgetList = deepClone(MyformJson.widgetList)     // 注意：不隔层！
-        if (MyformJson.formConfig) formJson.formConfig = deepClone(MyformJson.formConfig)
-        onselectedWidget.value = null                              // 清空选中
-        onselectedWidgetId.value = null
-        ElMessage.success('表单已载入')
-    } catch (error) {
-        ElMessage.error('加载表单失败')
+        execute(removeColCommand(widget, index))
+      })
+    } else {
+      execute(removeColCommand(widget, index))
     }
-}
+  }
+  const loadForm=(MyformJson:any,id:string)=>{
+      try {
+          if (!MyformJson || !MyformJson.widgetList) {
+              ElMessage.error('该表单数据为空或不存在')
+              return
+          }
+          execute(replaceFormCommand(
+              deepClone(MyformJson.widgetList),
+              deepClone(MyformJson.formConfig ?? getDefaultFormConfig())
+          ))
+          currentId.value=id
+          onselectedWidget.value = null
+          onselectedWidgetId.value = null
+          ElMessage.success('表单已载入')
+      } catch (error) {
+          ElMessage.error('加载表单失败')
+      }
+  }
 //保存表单
 const saveMyForm=async()=>{
   //拿到当前id

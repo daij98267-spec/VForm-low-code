@@ -22,7 +22,8 @@
                       @click.stop="!preview&&selectedWidget(widget)"
                       >
                       <!--prop 是表单的属性，用于绑定表单数据的属性-->
-            <component :is="basicFields[widget.type]"
+            <LazyField
+            :comp="basicFields[widget.type]"
             :widget="widget"
             :formData="formData"
             />
@@ -52,6 +53,7 @@ import draggable from 'vuedraggable'
 import { computed,ref,provide,inject } from 'vue'
 import ContainerWidget from './ContainerWidget.vue'
 import { getRules } from '../utils/util.ts'
+import LazyField from './LazyField.vue'
 
 //拿数据inject
 const {

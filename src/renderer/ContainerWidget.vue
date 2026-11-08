@@ -31,7 +31,7 @@
                 :class="{ 'highlight': !preview&&child.id === selectedWidgetId }"
                 @click.stop="!preview&&selectedWidget(child)"
               >
-                <component :is="basicFields[child.type]" :widget="child" :formData="formData" />
+                <LazyField :comp="basicFields[child.type]" :widget="child" :formData="formData" />
                 <br>
                 <hr>
                 <el-button type="danger" size="small" v-if="!preview" @click.stop="removeWidget(child)">x</el-button>
@@ -69,7 +69,7 @@
               :class="{ 'highlight': !preview&&child.id === selectedWidgetId }"
               @click.stop="!preview&&selectedWidget(child)"
             >
-              <component :is="basicFields[child.type]" :widget="child" :formData="formData" />
+              <LazyField :comp="basicFields[child.type]" :widget="child" :formData="formData" />
               <br>
               <hr>
               <el-button type="danger" size="small" v-if="!preview" @click.stop="removeWidget(child)">x</el-button>
@@ -93,6 +93,8 @@
   import type { Widget } from '../utils/type.ts'
   import draggable from 'vuedraggable'
   import { getRules,isVisible } from '../utils/util.ts'
+  import LazyField from './LazyField.vue'
+
   //接收数据
  const {
     selectedWidget, removeWidget, copyWidget, moveUp, moveDown,

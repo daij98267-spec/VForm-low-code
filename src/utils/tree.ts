@@ -1,5 +1,5 @@
 import type { Widget } from '../utils/type.ts'
-
+import {deepClone} from '../utils/util.ts'
 //判断树中是否有指定名称的组件
 export function hasName(list:Widget[],name:string):boolean{
     return list.some(widget=>{
@@ -109,4 +109,21 @@ export function collectFieldNames(list:Widget[]):string[]{
           }
       }
       return fields
+    }
+// 捕获一个 widget 的所有数据（包括子组件）
+ export function captureWidgetData(formData: Record<string, any>, widget: Widget) {
+    const saved: Record<string, any> = {}
+    for (const leaf of collectFields([widget])) {   // 叶子自己 = [它]；容器 = 所有子孙叶子
+      const name = leaf.options.name
+      if (formData[name] !== undefined) saved[name] = deepClone(formData[name])
+    }
+    return saved
+  }
+//捕获某一列的所有组件的所有数据（包括子组件）
+  export function captureColumnData(formData: Record<string, any>, column: Widget[]): Record<string, any> {
+    const saved: Record<string, any> = {}
+    for (const widget of column) {
+      Object.assign(saved, captureWidgetData(formData, widget))
+    }
+    return saved
   }
